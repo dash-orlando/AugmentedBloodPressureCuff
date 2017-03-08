@@ -9,18 +9,19 @@
 # Link: I'll provide it later as I lost it
 #
 '''
+
 ###
 # DEBUG FLAG.
 # Developmental purposes ONLY!
 ###
 debug=0
 
-import sys, time, serial, os
-from PyQt4 import QtCore, QtGui, Qt
-from PyQt4.Qwt5 import Qwt
-from dial import Ui_MainWindow
-import  Adafruit_ADS1x15    # Required library for ADC converter
-from    numpy import interp # Required for mapping values
+import  sys, time                               # 'nuff said
+import  Adafruit_ADS1x15                        # Required library for ADC converter
+from    PyQt4       import QtCore, QtGui, Qt    # PyQt4 libraries required to render display
+from    PyQt4.Qwt5  import Qwt                  # Same here, boo-boo!
+from    dial        import Ui_MainWindow        # Imports pre-build dial guage from dial.py
+from    numpy       import interp               # Required for mapping values
 
 # Define the value of the supply voltage of the pressure sensor
 V_supply = 3.3
@@ -31,10 +32,8 @@ GAIN = 1 # Reads values in the range of +/-4.096V
 
 class MyWindow(QtGui.QMainWindow):
 
-    adder = .01
-    value = 0
-    ComPortValue = 0
-    LastComPortValue = 0
+    pressureValue = 0
+    lastPressureValue = 0
     
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -45,11 +44,12 @@ class MyWindow(QtGui.QMainWindow):
         self.ui.Dial.setOrigin(90.0)
         self.ui.Dial.setScaleArc(0.0,340.0)
         self.ui.Dial.update()
-        self.ui.Dial.setNeedle(Qwt.QwtDialSimpleNeedle(
-            Qwt.QwtDialSimpleNeedle.Arrow,
-            True,
-            Qt.QColor(Qt.Qt.red),
-            Qt.QColor(Qt.Qt.gray).light(130)))
+        self.ui.Dial.setNeedle( Qwt.QwtDialSimpleNeedle(
+                                                        Qwt.QwtDialSimpleNeedle.Arrow,
+                                                        True, Qt.QColor(Qt.Qt.red),
+                                                        Qt.QColor(Qt.Qt.gray).light(130)
+                                                        )
+                                )
 
         self.ui.Dial.setScaleOptions(Qwt.QwtDial.ScaleTicks | Qwt.QwtDial.ScaleLabel | Qwt.QwtDial.ScaleBackbone)
         # small ticks are length 5, medium are 15, large are 20
@@ -65,23 +65,11 @@ class MyWindow(QtGui.QMainWindow):
         self.ctimer.start(10)
         QtCore.QObject.connect(self.ctimer, QtCore.SIGNAL("timeout()"), self.UpdateDisplay)
         
-        
-
-    # method called by comport dropdown list:
-    def GetComPort(self,port):
-        self.thread.comport = str(port)
-        self.ui.CommandLabel.setText(port+" Selected")
-        self.ui.Dial.setEnabled(True)
-        self.ui.ComSelect.setEnabled(False)
-        # set timeout function for updates
-        self.ctimer = QtCore.QTimer()
-        self.ctimer.start(10)
-        QtCore.QObject.connect(self.ctimer, QtCore.SIGNAL("timeout()"), self.UpdateDisplay)
-
+       
     def UpdateDisplay(self):
-        if self.ComPortValue != self.LastComPortValue:
-            self.ui.Dial.setValue(self.ComPortValue)
-            self.LastComPortValue = self.ComPortValue
+        if self.pressureValue != self.lastPressureValue:
+            self.ui.Dial.setValue(self.pressureValue)
+            self.lastPressureValue = self.pressureValue
 
 
 
@@ -91,12 +79,12 @@ class MyWindow(QtGui.QMainWindow):
 
 class Worker(QtCore.QThread):
 
-    comport = 'none1'
+    channel = 'none1'
     
     def __init__(self, parent = None):
         QtCore.QThread.__init__(self, parent)
         # self.exiting = False # not sure what this line is for
-        # print "worker thread initializing"
+        print "Worker thread initializing!"
         self.owner = parent
         self.start()
 
@@ -106,14 +94,14 @@ class Worker(QtCore.QThread):
     def run(self):
         # this method is called by self.start() in __init__()
         '''
-        while self.comport == 'none':
+        while self.channel == 'none':
             time.sleep(.1)
         '''
         while True:
-            self.owner.ComPortValue = self.ReadPort()
+            self.owner.pressureValue = self.readPressure()
             
             
-    def ReadPort(self):
+    def readPressure(self):
 
         V_analogRead = ADC.read_adc(0, gain=GAIN)
         V_out = interp(V_analogRead, [1235,19279.4116], [0.16,2.41])
@@ -121,7 +109,7 @@ class Worker(QtCore.QThread):
         mmHg = pressure*760/101.3
         
         if debug==1:
-            print("Pressure: %.2fkPa ||  %.2fmmHg" %(pressure, pressure*760/101.3))
+            print("Pressure: %.2fkPa ||  %.2fmmHg" %(pressure, mmHg))
             print("AnalogRead: %i  || V_out: %.2f" %(V_analogRead, V_out))
             print("-------------------------------")
             time.sleep(.25)

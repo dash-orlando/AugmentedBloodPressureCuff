@@ -49,15 +49,23 @@ class Ui_MainWindow(object):
         self.Dial.setObjectName("Dial")
         self.verticalLayout.addWidget(self.Dial)
 
-
-        self.csecLabel = QtGui.QLabel('CSEC', self.centralwidget)
-        #sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
-        #sizePolicy.setHorizontalStretch(0)
-        #sizePolicy.setVerticalStretch(0)
-        #sizePolicy.setHeightForWidth(self.csecLabel.sizePolicy().hasHeightForWidth())
-        #self.csecLabel.setSizePolicy(sizePolicy)
+        # Setup Labels (CSEC, PD3D, etc...)
+        self.csecLabel = QtGui.QLabel(self.centralwidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.csecLabel.sizePolicy().hasHeightForWidth())
+        self.csecLabel.setSizePolicy(sizePolicy)
+        self.csecLabel.setObjectName("csecLabel")
+        self.verticalLayout.addWidget(self.csecLabel)
+        #self.csecLabel.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.csecLabel.setAlignment(QtCore.Qt.AlignCenter)
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        font.setWeight(75)
+        font.setBold(False)
         self.csecLabel.setFont(font)
+        
         
         MainWindow.setCentralWidget(self.centralwidget)
         
@@ -68,7 +76,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Sphygnomanometer", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("MainWindow", "mmHg", None, QtGui.QApplication.UnicodeUTF8))
-        #self.CommandLabel.setText(QtGui.QApplication.translate("MainWindow", "CSEC", None, QtGui.QApplication.UnicodeUTF8))
+        self.csecLabel.setText(QtGui.QApplication.translate("MainWindow", "CSEC\nPD3D", None, QtGui.QApplication.UnicodeUTF8))
         
 from PyQt4 import Qwt5
 
