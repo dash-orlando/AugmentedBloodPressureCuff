@@ -1,0 +1,56 @@
+To successfully run and render the pressure guage dial,
+
+1) Remove unecessary packages and make sure the RPi is up to date:
+	/// Removes unecessary packages
+	$ sudo apt-get purge libreoffice*
+	$ sudo apt-get purge wolfram*
+	
+	/// Updates packages to latest release
+	$ sudo apt-get update && sudo apt-get upgrade
+	$ sudo apt-get dist-upgrade
+	$ sudo rpi-update
+
+	/// Removes leftover dependencies and whatnot
+	$ sudo apt-get autoclean && sudo apt-get autoremove
+
+	/// Reboot for changes to take effect
+	$ sudo reboot
+
+	- After rebooting, the BlueTooth adapter might appear disabled (greyed out). This is an official issue
+	  addressed by (https://www.raspberrypi.org).
+	  If that is the case, simply reinstall the BlueTooth controller package:
+		$ sudo apt-get install pi-bluetooth
+		$ sudo reboot
+
+---
+- NOTE: This part is going to take quite sometime
+---
+
+2) Install PyQt4:
+	$ sudo apt-get install python-qt4 python-qt4-dbus python-qt4-dev python-qt4-doc python-qt4-gl python-qt4-phonon python-qt4-sql python-qtmobility python-qwt3d-qt4 python-qwt5-qt4
+
+3) Install ADS1x15 library to enable the ADC unit:
+	// Install pre-reqs in case they are missing
+	$ sudo apt-get install git build-essential python-dev
+
+	// Install the ADS1x15 library
+	$ cd ~
+	$ sudo git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
+	$ cd Adafruit_Python_ADS1x15
+	$ sudo python setup.py install
+
+4) Enable I2C on RPi:
+	$ sudo raspi-config
+
+	- Look for interfacing options (preipherals) and enable I2C
+
+
+5) Connect the circuit to the RPi
+
+6) No step 6
+
+7) DONE!!
+
+---
+- NOTE: Andres is a reptilian!
+---
