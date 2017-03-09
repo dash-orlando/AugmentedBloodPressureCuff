@@ -9,10 +9,16 @@
 
 from PyQt4 import QtCore, QtGui
 
+# Get screen resolution for automatic sizing
+
+app=QtGui.QApplication([])
+screen_resolution = app.desktop().screenGeometry()
+width, height = screen_resolution.width(), screen_resolution.height()
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(779, 650)
+        MainWindow.resize(width, height-100)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
