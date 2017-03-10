@@ -18,7 +18,7 @@ width, height = screen_resolution.width(), screen_resolution.height()
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(width, height-100)
+        MainWindow.showFullScreen()
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
@@ -71,17 +71,30 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         font.setBold(False)
         self.csecLabel.setFont(font)
-        
-        
-        MainWindow.setCentralWidget(self.centralwidget)
-        
 
+        # Setup pushbutton to quit program
+        self.pushButton = QtGui.QPushButton(self.centralwidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
+        self.pushButton.setSizePolicy(sizePolicy)
+        self.pushButton.setMaximumSize(QtCore.QSize(190, 16777215))
+        self.pushButton.setObjectName("pushButton")
+        self.verticalLayout.addWidget(self.pushButton)
+        self.pushButton.clicked.connect(MainWindow.close)
+        font.setPointSize(14)
+        font.setWeight(75)
+        font.setBold(True)
+        self.pushButton.setFont(font)
+
+        MainWindow.setCentralWidget(self.centralwidget)        
         self.retranslateUi(MainWindow)
-
-
+        
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Sphygnomanometer", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("MainWindow", "mmHg", None, QtGui.QApplication.UnicodeUTF8))
+        self.pushButton.setText(QtGui.QApplication.translate("MainWindow", "EXIT", None, QtGui.QApplication.UnicodeUTF8))
         self.csecLabel.setText(QtGui.QApplication.translate("MainWindow", "CSEC\nPD3D", None, QtGui.QApplication.UnicodeUTF8))
         
 from PyQt4 import Qwt5
