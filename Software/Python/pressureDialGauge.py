@@ -16,8 +16,10 @@
 ###
 debug=0
 
-import  sys, time                               # 'nuff said
+import  sys, time, bluetooth                    # 'nuff said
 import  Adafruit_ADS1x15                        # Required library for ADC converter
+import  pressureCuffDefinitions as definitions
+from    bluetoothProtocol import *
 from    PyQt4       import QtCore, QtGui, Qt    # PyQt4 libraries required to render display
 from    PyQt4.Qwt5  import Qwt                  # Same here, boo-boo!
 from    dial        import Ui_MainWindow        # Imports pre-build dial guage from dial.py
@@ -29,6 +31,9 @@ V_supply = 3.3
 # Initialize ADC
 ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1 # Reads values in the range of +/-4.096V
+
+# Create BTooth port
+rfObject = createPortS("ABPC", 1, "B8:27:EB:75:5E:A5", 115200, 10)  
 
 class MyWindow(QtGui.QMainWindow):
 
@@ -113,6 +118,15 @@ class Worker(QtCore.QThread):
             print("AnalogRead: %i  || V_out: %.2f" %(V_analogRead, V_out))
             print("-------------------------------")
             time.sleep(.25)
+
+        if mode == NRMOP:
+            return(mmHg)
+        
+        elif mode==SIM_000:
+            mmHg = mmHg + mmHg*0.7
+            
+        elif mode==SIM_001:
+            mmHg = mmHg - mmHg*0.7
         
         return(mmHg)
 
@@ -122,6 +136,18 @@ class Worker(QtCore.QThread):
 #************************************************************************
 
 if __name__ == "__main__":
+    # Obtain sent command, if any
+    inByte = rfObject.read(size=1)
+    if inByte > 0:
+        if inByte == definitions.NRMOP:
+            mode = NRMOP
+        elif inByte == definitions.SIM_000:
+            mode = SIM_000
+        elif inByte == definitions.SIM_001:
+            mode = SIM_001
+    else:
+        mode = NRMOP
+        
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
     MyApp.show()
