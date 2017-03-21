@@ -7,6 +7,7 @@ import serial
 from configurationProtocol import *
 from bluetoothProtocol import *
 from pressureCuffProtocol import *
+import pressureCuffDefinitions as definitions
 
 # Variables
 # ----------------------------------------------
@@ -40,10 +41,10 @@ deviceBTAddress = "B8:27:EB:7A:40:71"
 #rfObject = createPortS(deviceName, 1, deviceBTAddress, 115200, 20)          # create rfObjects/ports
 
 #statusEnquiry(rfObject, 5, 5)
-startSIMold(rfObject, 5, 5)
+#startSIMold(rfObject, 5, 5)
 #deviceID(rfObject)
 
-clientSocket(deviceBTAddress, "SIM_000")
+clientSocket(deviceBTAddress, definitions.SIM_000)
 
 
 #portRelease('rfcomm', 0)                                    # Release port to avoid permanent connection

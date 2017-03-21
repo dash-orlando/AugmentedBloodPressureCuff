@@ -36,11 +36,12 @@ def serverSocket(timeout, attempts):
     try:
         client_socket,address=server_socket.accept()
         print( fullStamp() + " Accepted connection from: ", address)
-        inByte = client_socket.recv(1024)
+        inByte = client_socket.recv(4096)
         print( fullStamp() + " Recieved [%s]" % data)
 
         client_socket.close()
         server_socket.close()
+        return(inByte)
 
     except:
         print( fullStamp() + " Connection failed")

@@ -137,7 +137,7 @@ class Worker(QtCore.QThread):
 
 if __name__ == "__main__":
     # Obtain sent command, if any
-    inByte = rfObject.read(size=1)
+    inByte = serverSocket(5,5)
     if inByte > 0:
         if inByte == definitions.NRMOP:
             mode = NRMOP
