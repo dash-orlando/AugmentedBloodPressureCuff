@@ -20,6 +20,47 @@ import time
 from timeStamp import *
 import protocolDefinitions as definitions
 
+# Create a server socket (Incoming data)
+#   PARAMATERS:
+#   timeout: runtime duration before timing out (in seconds)
+def serverSocket(timeout, attempts):
+    print( fullStamp() + " Creating BlueTooth Socket")
+    port = 1
+
+    server_socket = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+    # Empty string means any working BT adapter is fair game to use
+    server_socket.bind(("",port))
+    server_socket.listen(1)
+    server_socket.settimeout(timeout)
+
+    try:
+        client_socket,address=server_socket.accept()
+        print( fullStamp() + " Accepted connection from: ", address)
+        inByte = client_socket.recv(1024)
+        print( fullStamp() + " Recieved [%s]" % data)
+
+        client_socket.close()
+        server_socket.close()
+
+    except:
+        print( fullStamp() + " Connection failed")
+        if attempts is not 1:
+            print( fullStamp() + " Attempting..." )
+            server_socket.close()
+            serverSocket(timeout, attempts-1)
+        
+
+# Create a client socket (Outgoing data)
+def clientSocket(bd_addr, byte):
+    port = 1
+
+    client_socket=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+    client_socket.connect((bd_addr, port))
+
+    client_socket.send(byte)
+
+    client_socket.close()
+    
 
 # Find RF Device
 #   This function uses the hardware of the peripheral device or control system to scan/find bluetooth enabled devices

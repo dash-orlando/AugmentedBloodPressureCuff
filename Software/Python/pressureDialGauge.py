@@ -33,7 +33,7 @@ ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1 # Reads values in the range of +/-4.096V
 
 # Create BTooth port
-rfObject = createPortS("ABPC", 1, "B8:27:EB:75:5E:A5", 115200, 10)  
+rfObject = serverSocket(5, 3)  
 
 class MyWindow(QtGui.QMainWindow):
 
