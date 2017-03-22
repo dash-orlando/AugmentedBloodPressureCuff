@@ -16,14 +16,14 @@
 ###
 debug=0
 
-import  sys, time, bluetooth                    # 'nuff said
-import  Adafruit_ADS1x15                        # Required library for ADC converter
-import  pressureCuffDefinitions as definitions
-from    bluetoothProtocol import *
-from    PyQt4       import QtCore, QtGui, Qt    # PyQt4 libraries required to render display
-from    PyQt4.Qwt5  import Qwt                  # Same here, boo-boo!
-from    dial        import Ui_MainWindow        # Imports pre-build dial guage from dial.py
-from    numpy       import interp               # Required for mapping values
+import  sys, time, bluetooth                            # 'nuff said
+import  Adafruit_ADS1x15                                # Required library for ADC converter
+from    stethoscopeProtocol import *
+from    bluetoothProtocol   import *
+from    PyQt4               import QtCore, QtGui, Qt    # PyQt4 libraries required to render display
+from    PyQt4.Qwt5          import Qwt                  # Same here, boo-boo!
+from    dial                import Ui_MainWindow        # Imports pre-build dial guage from dial.py
+from    numpy               import interp               # Required for mapping values
 
 # Define the value of the supply voltage of the pressure sensor
 V_supply = 3.3
@@ -33,6 +33,12 @@ ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1 # Reads values in the range of +/-4.096V
 
 # Create BTooth port
+deviceName = "SS"
+deviceBTAddress = "00:06:66:86:77:09"
+rfObject = createPort(deviceName, deviceBTAddress, 115200, 5, 5)
+
+time.sleep(1)
+
 # rfObject = serverSocket(5, 3)  
 
 class MyWindow(QtGui.QMainWindow):
@@ -85,6 +91,10 @@ class MyWindow(QtGui.QMainWindow):
 class Worker(QtCore.QThread):
 
     channel = 'none1'
+
+    # Create flags for what mode we are running
+    normal = 1
+    abnormal = 0
     
     def __init__(self, parent = None):
         QtCore.QThread.__init__(self, parent)
@@ -119,6 +129,7 @@ class Worker(QtCore.QThread):
             print("-------------------------------")
             time.sleep(.25)
         '''
+        
         if mode == NRMOP:
             return(mmHg)
         
@@ -128,6 +139,22 @@ class Worker(QtCore.QThread):
         elif mode==SIM_001:
             mmHg = mmHg - mmHg*0.7
         '''
+        if (mmHg > 70) and (self.abnormal == 0):
+            self.normal = 0
+            self.abnormal = 1
+            if rfObject.isOpen() == False:
+                rfObject.open()
+            earlyHMPlayback(rfObject, 3)
+            rfObject.close()
+
+        elif (mmHg <= 70) and (self.normal == 0):
+            self.normal = 1
+            self.abnormal = 0
+            if rfObject.isOpen() == False:
+                rfObject.open()
+            stopPlayback(rfObject, 3)
+            rfObject.close()
+            
         return(mmHg)
 
 
