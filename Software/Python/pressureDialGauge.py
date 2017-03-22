@@ -33,7 +33,7 @@ ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1 # Reads values in the range of +/-4.096V
 
 # Create BTooth port
-rfObject = serverSocket(5, 3)  
+# rfObject = serverSocket(5, 3)  
 
 class MyWindow(QtGui.QMainWindow):
 
@@ -118,7 +118,7 @@ class Worker(QtCore.QThread):
             print("AnalogRead: %i  || V_out: %.2f" %(V_analogRead, V_out))
             print("-------------------------------")
             time.sleep(.25)
-
+        '''
         if mode == NRMOP:
             return(mmHg)
         
@@ -127,7 +127,7 @@ class Worker(QtCore.QThread):
             
         elif mode==SIM_001:
             mmHg = mmHg - mmHg*0.7
-        
+        '''
         return(mmHg)
 
 
@@ -136,6 +136,7 @@ class Worker(QtCore.QThread):
 #************************************************************************
 
 if __name__ == "__main__":
+    '''
     # Obtain sent command, if any
     inByte = serverSocket(5,5)
     if inByte > 0:
@@ -147,7 +148,7 @@ if __name__ == "__main__":
             mode = SIM_001
     else:
         mode = NRMOP
-        
+    '''    
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
     MyApp.show()
