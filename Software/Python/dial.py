@@ -7,7 +7,8 @@
 #
 '''
 
-from PyQt4 import QtCore, QtGui
+from PyQt4              import QtCore, QtGui
+from bluetoothProtocol  import portRelease
 
 # Get screen resolution for automatic sizing
 
@@ -83,6 +84,8 @@ class Ui_MainWindow(object):
         self.pushButton.setMaximumSize(QtCore.QSize(190, 16777215))
         self.pushButton.setObjectName("pushButton")
         self.verticalLayout.addWidget(self.pushButton)
+        # Release ports and close window on shutdown
+        self.pushButton.clicked.connect(lambda: portRelease("rfcomm", 0))
         self.pushButton.clicked.connect(MainWindow.close)
         font.setPointSize(14)
         font.setWeight(75)

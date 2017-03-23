@@ -8,6 +8,18 @@
 # Adapted from: John Harrison's original work
 # Link: I'll provide it later as I lost it
 #
+# VERSION 0.3
+#
+# CHANGELOG:
+#   1- Improved boot up time (still needs some work)
+#   2- rfcomm port is now released when clicking the EXIT button
+#   3- Cleaned up code
+#
+# KNOWN ISSUES:
+#   1- Small time lag in updating needle position when sending bluetooth commands (look into threading)
+#   2- Sending multiple bytes back and forth (say 5 times in a row) crashes the program (look into try-except)
+#   3- Dial screen will NOT appear until communication is established (look into threading)
+#
 '''
 
 ###
@@ -18,8 +30,10 @@ debug=0
 
 import  sys, time, bluetooth                            # 'nuff said
 import  Adafruit_ADS1x15                                # Required library for ADC converter
-from    stethoscopeProtocol import *
-from    bluetoothProtocol   import *
+from    stethoscopeProtocol import earlyHMPlayback      # Early Systolic Heart Murmur
+from    stethoscopeProtocol import stopBlending         # Read the function's name
+from    bluetoothProtocol   import createPort           # Open BlueTooth port 
+from    timeStamp           import fullStamp            # Show date/time on console output
 from    PyQt4               import QtCore, QtGui, Qt    # PyQt4 libraries required to render display
 from    PyQt4.Qwt5          import Qwt                  # Same here, boo-boo!
 from    dial                import Ui_MainWindow        # Imports pre-build dial guage from dial.py
@@ -30,16 +44,15 @@ V_supply = 3.3
 
 # Initialize ADC
 ADC = Adafruit_ADS1x15.ADS1115()
-GAIN = 1 # Reads values in the range of +/-4.096V
+GAIN = 1        # Reads values in the range of +/-4.096V
 
 # Create BTooth port
 deviceName = "SS"
 deviceBTAddress = "00:06:66:86:77:09"
 rfObject = createPort(deviceName, deviceBTAddress, 115200, 5, 5)
 
-time.sleep(1)
-
-# rfObject = serverSocket(5, 3)  
+time.sleep(0.1) # Stability
+ 
 
 class MyWindow(QtGui.QMainWindow):
 
@@ -65,7 +78,7 @@ class MyWindow(QtGui.QMainWindow):
         self.ui.Dial.setScaleOptions(Qwt.QwtDial.ScaleTicks | Qwt.QwtDial.ScaleLabel | Qwt.QwtDial.ScaleBackbone)
         # small ticks are length 5, medium are 15, large are 20
         self.ui.Dial.setScaleTicks(5, 15, 20)
-        # large ticks show every 1, put 10 small ticks between each large tick and every 5 small ticks make a medium tick
+        # large ticks show every 20, put 10 small ticks between each large tick and every 5 small ticks make a medium tick
         self.ui.Dial.setScale(10.0,10.0,20.0)
         self.ui.Dial.setRange(0.0, 300.0)
         self.ui.Dial.setValue(0)
@@ -93,13 +106,13 @@ class Worker(QtCore.QThread):
     channel = 'none1'
 
     # Create flags for what mode we are running
-    normal = 1
-    abnormal = 0
+    normal = True
+    abnormal = False
     
     def __init__(self, parent = None):
         QtCore.QThread.__init__(self, parent)
         # self.exiting = False # not sure what this line is for
-        print "Worker thread initializing!"
+        print( fullStamp() + " Initializing worker thread!")
         self.owner = parent
         self.start()
 
@@ -127,32 +140,22 @@ class Worker(QtCore.QThread):
             print("Pressure: %.2fkPa ||  %.2fmmHg" %(pressure, mmHg))
             print("AnalogRead: %i  || V_out: %.2f" %(V_analogRead, V_out))
             print("-------------------------------")
-            time.sleep(.25)
-        '''
+            time.sleep(0.25)
         
-        if mode == NRMOP:
-            return(mmHg)
-        
-        elif mode==SIM_000:
-            mmHg = mmHg + mmHg*0.7
-            
-        elif mode==SIM_001:
-            mmHg = mmHg - mmHg*0.7
-        '''
-        if (mmHg > 70) and (self.abnormal == 0):
-            self.normal = 0
-            self.abnormal = 1
+        if (mmHg > 70) and (self.abnormal == False):
+            self.normal = False
+            self.abnormal = True
             if rfObject.isOpen() == False:
                 rfObject.open()
             earlyHMPlayback(rfObject, 3)
             rfObject.close()
 
-        elif (mmHg <= 70) and (self.normal == 0):
-            self.normal = 1
-            self.abnormal = 0
+        elif (mmHg <= 70) and (self.normal == False):
+            self.normal = True
+            self.abnormal = False
             if rfObject.isOpen() == False:
                 rfObject.open()
-            stopPlayback(rfObject, 3)
+            stopBlending(rfObject, 3)
             rfObject.close()
             
         return(mmHg)
@@ -163,19 +166,7 @@ class Worker(QtCore.QThread):
 #************************************************************************
 
 if __name__ == "__main__":
-    '''
-    # Obtain sent command, if any
-    inByte = serverSocket(5,5)
-    if inByte > 0:
-        if inByte == definitions.NRMOP:
-            mode = NRMOP
-        elif inByte == definitions.SIM_000:
-            mode = SIM_000
-        elif inByte == definitions.SIM_001:
-            mode = SIM_001
-    else:
-        mode = NRMOP
-    '''    
+ 
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
     MyApp.show()
