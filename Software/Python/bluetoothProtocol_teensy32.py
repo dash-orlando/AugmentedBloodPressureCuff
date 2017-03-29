@@ -183,11 +183,14 @@ def createPort(deviceName,portNumber,deviceBTAddress,baudrate,attempts):
     portBind("rfcomm",portNumber,deviceBTAddress)
     rfObject = serial.Serial(
         port = "/dev/rfcomm" + str(portNumber),
-        baudrate = baudrate)
+        baudrate = baudrate,
+        bytesize = serial.EIGHTBITS,
+        parity = serial.PARITY_NONE,
+        stopbits = serial.STOPBITS_ONE)
     time.sleep(1)
     connectionCheck(rfObject,deviceName,portNumber,deviceBTAddress,baudrate,attempts)
     rfObject.close()
-    return rfObject
+    return(rfObject)
 
 #   Connection Check
 def connectionCheck(rfObject,deviceName,portNumber,deviceBTAddress,baudrate,attempts):
@@ -198,12 +201,14 @@ def connectionCheck(rfObject,deviceName,portNumber,deviceBTAddress,baudrate,atte
         print fullStamp() + " ACK Connection Established"
         rfObject.close()
         return rfObject
+    
     elif inByte == definitions.NAK:
         print fullStamp() + " NAK device NOT READY"
+
     else:
         rfObject.close()
         if attempts is not 0:
-            return createPort(deviceName,portNumber,deviceBTAddress,baudrate,attempts-1)
+            return createPort(deviceName,portNumber,deviceBTAddress,baudrate,attempts-1,q)
         elif attempts is 0:
             print fullStamp() + " Attempts limit reached"
             print fullStamp() + " Please troubleshoot devices"

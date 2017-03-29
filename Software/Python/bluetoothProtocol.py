@@ -19,6 +19,8 @@ import serial
 import time
 from timeStamp import *
 import protocolDefinitions as definitions
+from    multiprocessing        import Process
+from    multiprocessing        import Pipe, Queue
 
 # Create a server socket (Incoming data)
 #   PARAMATERS:
@@ -225,7 +227,7 @@ def connectionCheck2(rfObjects,index,rfObject,deviceName,deviceBTAddress,baudrat
 #           ::  {int}       timeout
 #   Output  ::  {object}    serial object
 
-def createPort(deviceName,deviceBTAddress,baudrate,timeout,attempts):
+def createPort(deviceName,deviceBTAddress,baudrate,timeout,attempts, q):
     portRelease("rfcomm",0)                                                             # The program performs a port-release to ensure that the desired rf port is available
     portBind("rfcomm",0,deviceBTAddress)
     rfObject = serial.Serial(
@@ -242,13 +244,15 @@ def createPort(deviceName,deviceBTAddress,baudrate,timeout,attempts):
     if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response
         print fullStamp() + " ACK Connection Established"
         rfObject.close()
+        #q.put_nowait(rfObject)
         return rfObject
+        
     elif inByte == definitions.NAK:
         print fullStamp() + " NAK device NOT READY"
     else:
         rfObject.close()
         if attempts is not 0:
-            return createPort(deviceName,deviceBTAddress,baudrate,timeout,attempts-1)
+            return createPort(deviceName,deviceBTAddress,baudrate,timeout,attempts-1, q)
         elif attempts is 0:
             print fullStamp() + " Attempts limit reached"
             print fullStamp() + " Please troubleshoot devices"
