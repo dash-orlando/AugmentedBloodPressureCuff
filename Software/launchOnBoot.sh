@@ -2,6 +2,6 @@
 # launchOnBoot.sh
 
 cd ~/
-cd Desktop/AugmentedBloodPressureCuff/Software/Python/
+cd Desktop/AugmentedBloodPressureCuff/
 sudo python pressureDialGauge.py
 cd ~/
