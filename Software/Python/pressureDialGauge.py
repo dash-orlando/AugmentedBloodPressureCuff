@@ -38,6 +38,7 @@ from    PyQt4               import QtCore, QtGui, Qt    # PyQt4 libraries requir
 from    PyQt4.Qwt5          import Qwt                  # Same here, boo-boo!
 from    numpy               import interp               # Required for mapping values
 from    multiprocessing     import Process              # Run functions in parallel
+from    os                  import getcwd, path, makedirs
 
 # PD3D modules
 from    dial                        import Ui_MainWindow        # Imports pre-built dial guage from dial.py
@@ -107,6 +108,7 @@ class Worker(QtCore.QThread):
     # Create flags for what mode we are running
     normal = True
     playback = False
+    wFreqTrigger = time.time()  # Check if the sampling frequency criteria is met
     
     def __init__(self, parent = None):
         QtCore.QThread.__init__(self, parent)
@@ -135,12 +137,16 @@ class Worker(QtCore.QThread):
         V_out = interp(V_analogRead, [1235,19279.4116], [0.16,2.41])
         pressure = (V_out/V_supply - 0.04)/0.018
         mmHg = pressure*760/101.3
-        
-        if debug==1:
-            print( "Pressure: %.2fkPa ||  %.2fmmHg" %(pressure, mmHg) )
-            print( "AnalogRead: %i  || V_out: %.2f" %(V_analogRead, V_out) )
-            print( "-------------------------------" )
-            time.sleep(0.25)
+
+        # Write to file
+        if (time.time() - self.wFreqTrigger) >= wFreq:
+            # Reset wFreqTrigger
+            self.wFreqTrigger = time.time()
+            
+            dataStream = ("%.02f, %.2f, %.2f\n" %((time.time()-startTime), pressure, mmHg) )
+            with open(dataFileName, "a") as dataFile:
+                dataFile.write(dataStream)
+                dataFile.close()
 
         # Error handling in case BT communication fails (1)    
         try:
@@ -149,7 +155,8 @@ class Worker(QtCore.QThread):
                 self.playback = True
                 if rfObject.isOpen == False:
                     rfObject.open()
-                Process( target=earlyHMPlayback, args=(rfObject, 3,) ).start()
+                u = Process( target=earlyHMPlayback, args=(rfObject, 3,) )
+                u.start()
                 rfObject.close()
 
             elif ((mmHg < 60) or (mmHg > 100)) and (self.normal == False):
@@ -157,7 +164,8 @@ class Worker(QtCore.QThread):
                 self.playback = False
                 if rfObject.isOpen == False:
                     rfObject.open()
-                Process( target=stopPlayback, args=(rfObject, 3,) ).start()
+                v = Process( target=stopPlayback, args=(rfObject, 3,) )
+                v.start()
                 rfObject.close()
                 
         # Error handling in case BT communication fails (2)        
@@ -179,14 +187,33 @@ class Worker(QtCore.QThread):
 # ESTABLISH COMMUNICATION
 # ************************************************************************
 port = 0
-deviceName = "SS"
+deviceName = "ABPC"
 deviceBTAddress = "00:06:66:86:77:09"
 rfObject = createPort(deviceName, port, deviceBTAddress, 115200, 5)
 
+# ************************************************************************
+# DATA STORAGE
+# ************************************************************************
+wFreq = 1
+scenarioNumber = 1
+dataFileDir = getcwd() + "/dataOutput/" + fullStamp()
+dataFileName = dataFileDir + "/output.txt"
+if(path.exists(dataFileDir)) == False:
+    makedirs(dataFileDir)
 
+with open(dataFileName, "a") as dataFile:
+    dataFile.write( "Date/Time: " + fullStamp() + "\n" )
+    dataFile.write( "Scenario: #" + str(scenarioNumber) + "\n" )
+    dataFile.write( "Device Name: " + deviceName + "\n" )
+    dataFile.write( "Units: seconds, kPa, mmHg" + "\n" )
+    dataFile.close()
+        
 # ************************************************************************
 # MAKE IT ALL HAPPEN
 # ************************************************************************
+
+# Save initial time since script launch
+startTime = time.time()
 
 # Define the value of the supply voltage of the pressure sensor
 V_supply = 3.3
@@ -201,4 +228,5 @@ if __name__ == "__main__":
     MyApp = MyWindow()
     MyApp.show()
     sys.exit(app.exec_())
+
 
