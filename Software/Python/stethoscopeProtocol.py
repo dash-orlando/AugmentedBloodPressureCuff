@@ -168,30 +168,30 @@ def stopRecording(rfObject,attempts):
 #                       iterCheck               {int}           maximum number of iterations for serial communication
 #       Output  ::      terminal messages       {string}        terminal messages for logging
 def startMicStream(rfObject):
-        print fullStamp() + " startMicStream()"                                                                 # ...
-        outBytes = [definitions.DC3, definitions.DC3_STARTSTREAM]                                               # ...
-        for i in range(0,len(outBytes)):                                                                        # ...
-                rfObject.write(outBytes[i])                                                                     # ...
-                if i == (len(outBytes) - 1):                                                                    # ...
-                        inByte = rfObject.read(size=1)                                                          # ...
-        if inByte == definitions.ACK:                                                                           # ...
-                print fullStamp() + " ACK Stethoscope will START STREAMING"                                     # If ACK, the stethoscope will START STREAMING
-        elif inByte == definitions.NAK:                                                                         # ...
-                print fullStamp() + " NAK Stethoscope CANNOT START STREAMING"                                   # NAK, in this case, translates to CANNOT START STREAMING
+        print fullStamp() + " startMicStream()"                                 # ...
+        outBytes = [definitions.DC3, definitions.DC3_STARTSTREAM]               # ...
+        for i in range(0,len(outBytes)):                                        # ...
+                rfObject.write(outBytes[i])                                     # ...
+                if i == (len(outBytes) - 1):                                    # ...
+                        inByte = rfObject.read(size=1)                          # ...
+        if inByte == definitions.ACK:                                           # ...
+                print fullStamp() + " ACK Stethoscope will START STREAMING"     # If ACK, the stethoscope will START STREAMING
+        elif inByte == definitions.NAK:                                         # ...
+                print fullStamp() + " NAK Stethoscope CANNOT START STREAMING"   # NAK, in this case, translates to CANNOT START STREAMING
 
 # Start Tracking Microphone Stream for Peaks
 #       This function commands the connected stethoscope to begin streaming audio from the microphone and find/detect peaks
 #       Input   ::      rfObject                {object}        serial object
 #       Output  ::      terminal messages       {string}        terminal messages for logging
 def startTrackingMicStream(rfObject,attempts):
-        print fullStamp() + " startTrackingMicStream()"                                                                 # Print function name
+        print fullStamp() + " startTrackingMicStream()"                         # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.STARTTRACKING                                                                              # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.STARTTRACKING                                     # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Device will START Tracking"                                                         # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Device will START Tracking"           # ACK, in this case, translates to DEVICE READY
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Device CANNOT START Tracking"
         else:
@@ -209,14 +209,14 @@ def startTrackingMicStream(rfObject,attempts):
 #       Input   ::      rfObject                {object}        serial object
 #       Output  ::      terminal messages       {string}        terminal messages for logging
 def stopTrackingMicStream(rfObject,attempts):
-        print fullStamp() + " stopTrackingMicStream()"                                                                 # Print function name
+        print fullStamp() + " stopTrackingMicStream()"                          # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.STOPTRACKING                                                                            # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.STOPTRACKING                                      # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Device will STOP Tracking"                                                         # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Device will STOP Tracking"            # ACK, in this case, translates to DEVICE READY
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Device CANNOT STOP Tracking"
         else:
@@ -234,14 +234,14 @@ def stopTrackingMicStream(rfObject,attempts):
 # Normal Hear Beat Playback
 #       This function triggers the playback of a normal heart beat
 def normalHBPlayback(rfObject, attempts):
-        print fullStamp() + " normalHBPlayback()"                                                                 # Print function name
+        print fullStamp() + " normalHBPlayback()"                               # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.NORMALHB                                                                              # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.NORMALHB                                          # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Stethoscope will START PLAYBACK of NORMAL HEARTBEAT"                                                        # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Stethoscope will START PLAYBACK of NORMAL HEARTBEAT"
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT START PLAYBACK of NORMAL HEARTBEAT"
         else:
@@ -256,14 +256,14 @@ def normalHBPlayback(rfObject, attempts):
 # Early Systolic Heart Murmur
 #       This function triggers the playback of an early systolic heart mumur
 def earlyHMPlayback(rfObject, attempts):
-        print fullStamp() + " earlyHMPlayback()"                                                                # Print function name
+        print fullStamp() + " earlyHMPlayback()"                                # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.ESHMURMUR                                                                              # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.ESHMURMUR                                         # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Stethoscope will START PLAYBACK of EARLY SYSTOLIC HEART MUMUR"                                                        # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Stethoscope will START PLAYBACK of EARLY SYSTOLIC HEART MUMUR"
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT START PLAYBACK of EARLY SYSTOLIC HEART MUMUR" 
         else:
@@ -282,14 +282,14 @@ def earlyHMPlayback(rfObject, attempts):
 #                       iterCheck               {int}           maximum number of iterations for serial communication
 #       Output  ::      terminal messages       {string}        terminal messages for logging
 def stopPlayback(rfObject, attempts):
-        print fullStamp() + " stopPlayback()"                                                                 # Print function name
+        print fullStamp() + " stopPlayback()"                                   # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.STOPPLAY                                                                              # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.STOPPLAY                                          # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Stethoscope will STOP PLAYBACK"                                                         # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Stethoscope will STOP PLAYBACK"                                                        
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT STOP PLAYBACK"
         else:
@@ -304,14 +304,14 @@ def stopPlayback(rfObject, attempts):
 # Early Systolic Heart Murmur
 #       This function triggers the playback of an early systolic heart mumur
 def earlyHMBlending(rfObject, attempts):
-        print fullStamp() + " earlyHMBlending()"                                                                # Print function name
+        print fullStamp() + " earlyHMBlending()"                                # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.STARTBLEND                                                                              # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.STARTBLEND                                        # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Stethoscope will START BLENDING of EARLY SYSTOLIC HEART MUMUR"                                                        # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Stethoscope will START BLENDING of EARLY SYSTOLIC HEART MUMUR"                                                        
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT START BLENDING of EARLY SYSTOLIC HEART MUMUR" 
         else:
@@ -324,14 +324,14 @@ def earlyHMBlending(rfObject, attempts):
         rfObject.close()
 
 def startBlending(rfObject,fileByte,attempts):
-        print fullStamp() + " startBlending()"                                                                # Print function name
+        print fullStamp() + " startBlending()"                                  # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = fileByte                                                                             # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = fileByte                                                      # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Stethoscope will START BLENDING of EARLY SYSTOLIC HEART MUMUR"                                                        # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Stethoscope will START BLENDING of EARLY SYSTOLIC HEART MUMUR" 
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT START BLENDING of EARLY SYSTOLIC HEART MUMUR" 
         else:
@@ -350,20 +350,108 @@ def startBlending(rfObject,fileByte,attempts):
 #                       iterCheck               {int}           maximum number of iterations for serial communication
 #       Output  ::      terminal messages       {string}        terminal messages for logging
 def stopBlending(rfObject, attempts):
-        print fullStamp() + " stopBlending()"                                                                 # Print function name
+        print fullStamp() + " stopBlending()"                                   # Print function name
         if rfObject.isOpen() == False:
                 rfObject.open()
-        outByte = definitions.STOPBLEND                                                                              # Send ENQ / Status Enquiry command - see protocolDefinitions.py
+        outByte = definitions.STOPBLEND                                         # Send ENQ / Status Enquiry command - see protocolDefinitions.py
         rfObject.write(outByte)
-        inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
-        if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
-                print fullStamp() + " ACK Stethoscope will STOP BLENDING"                                                         # ACK, in this case, translates to DEVICE READY
+        inByte = rfObject.read(size=1)                                          # Execute sendUntilRead() from bluetoothProtocol.py
+        if inByte == definitions.ACK:                                           # Check for ACK / NAK response found through sendUntilRead()
+                print fullStamp() + " ACK Stethoscope will STOP BLENDING"       # ACK, in this case, translates to DEVICE READY
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT STOP BLENDING"
         else:
                 rfObject.close()
                 if attempts is not 0:
                         return stopBlending(rfObject,attempts-1)
+                elif attempts is 0:
+                        print fullStamp() + " Attempts limit reached"
+                        print fullStamp() + " Please troubleshoot device"
+        rfObject.close()
+
+# Normal Heartrate
+#       This function starts Normal Heartrate playback
+def startBPNorm(rfObject, attempts):
+        print fullStamp() + " startBPNorm()"
+        if rfObject.isOpen() == False:
+                rfObject.open()
+        outByte = definitions.STARTBPNORM
+        rfObject.write(outByte)
+        inByte = rfObject.read(size=1)
+        if inByte == definitions.ACK:
+                print fullStamp() + " ACK Stethoscope will START NORMAL playback"     
+        elif inByte == definitions.NAK:
+                print fullStamp() + " NAK Stethoscope CANNOT START NORMAL playback" 
+        else:
+                rfObject.close()
+                if attempts is not 0:
+                        return startBPNorm(rfObject,attempts-1)
+                elif attempts is 0:
+                        print fullStamp() + " Attempts limit reached"
+                        print fullStamp() + " Please troubleshoot device"
+        rfObject.close()
+
+# Bradycardia
+#       This function starts Bradycardia playback
+def startBPBrady(rfObject, attempts):
+        print fullStamp() + " startBPBrady()"
+        if rfObject.isOpen() == False:
+                rfObject.open()
+        outByte = definitions.STARTBPBRADY
+        rfObject.write(outByte)
+        inByte = rfObject.read(size=1)
+        if inByte == definitions.ACK:
+                print fullStamp() + " ACK Stethoscope will START playback of BRADYCARDIA"     
+        elif inByte == definitions.NAK:
+                print fullStamp() + " NAK Stethoscope CANNOT START BRADYCARDIA" 
+        else:
+                rfObject.close()
+                if attempts is not 0:
+                        return startBPBrady(rfObject,attempts-1)
+                elif attempts is 0:
+                        print fullStamp() + " Attempts limit reached"
+                        print fullStamp() + " Please troubleshoot device"
+        rfObject.close()
+
+# Tachycardia
+#       This function starts Tachycardia playback
+def startBPTachy(rfObject, attempts):
+        print fullStamp() + " startBPTachy()"
+        if rfObject.isOpen() == False:
+                rfObject.open()
+        outByte = definitions.STARTBPTACHY
+        rfObject.write(outByte)
+        inByte = rfObject.read(size=1)
+        if inByte == definitions.ACK:
+                print fullStamp() + " ACK Stethoscope will START playback of TACHYCARDIA"     
+        elif inByte == definitions.NAK:
+                print fullStamp() + " NAK Stethoscope CANNOT START TACHYCARDIA" 
+        else:
+                rfObject.close()
+                if attempts is not 0:
+                        return startBPTachy(rfObject,attempts-1)
+                elif attempts is 0:
+                        print fullStamp() + " Attempts limit reached"
+                        print fullStamp() + " Please troubleshoot device"
+        rfObject.close()
+
+# Stop All
+#       This function stops all augmentation
+def stopBPAll(rfObject, attempts):
+        print fullStamp() + " stopBPAll()"
+        if rfObject.isOpen() == False:
+                rfObject.open()
+        outByte = definitions.STOPBPALL
+        rfObject.write(outByte)
+        inByte = rfObject.read(size=1)
+        if inByte == definitions.ACK:
+                print fullStamp() + " ACK Stethoscope will STOP AUGMENTING"     
+        elif inByte == definitions.NAK:
+                print fullStamp() + " NAK Stethoscope CANNOT STOP AUGMENTING" 
+        else:
+                rfObject.close()
+                if attempts is not 0:
+                        return stopBPAll(rfObject,attempts-1)
                 elif attempts is 0:
                         print fullStamp() + " Attempts limit reached"
                         print fullStamp() + " Please troubleshoot device"
