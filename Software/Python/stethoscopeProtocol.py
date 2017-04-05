@@ -401,7 +401,7 @@ def startBPBrady(rfObject, attempts):
         rfObject.write(outByte)
         inByte = rfObject.read(size=1)
         if inByte == definitions.ACK:
-                print fullStamp() + " ACK Stethoscope will START playback of BRADYCARDIA"     
+                print fullStamp() + " ACK Stethoscope will START PLAYBACK of BRADYCARDIA"     
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT START BRADYCARDIA" 
         else:
@@ -423,7 +423,7 @@ def startBPTachy(rfObject, attempts):
         rfObject.write(outByte)
         inByte = rfObject.read(size=1)
         if inByte == definitions.ACK:
-                print fullStamp() + " ACK Stethoscope will START playback of TACHYCARDIA"     
+                print fullStamp() + " ACK Stethoscope will START PLAYBACK of TACHYCARDIA"     
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Stethoscope CANNOT START TACHYCARDIA" 
         else:

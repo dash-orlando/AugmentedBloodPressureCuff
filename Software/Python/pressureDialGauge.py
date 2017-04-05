@@ -197,8 +197,8 @@ class Worker(QtCore.QThread):
 # ************************************************************************
 port = 0
 deviceName = "ABPC"
-deviceBTAddress = "00:06:66:86:77:09"
-rfObject = createPort(deviceName, port, deviceBTAddress, 115200, 5)
+deviceBTAddress = ["00:06:66:86:76:E6", "00:06:66:86:77:09"] # [ Development (Moe), Lab Demos ]
+rfObject = createPort(deviceName, port, deviceBTAddress[1], 115200, 5)
 
 # ************************************************************************
 # DATA STORAGE
