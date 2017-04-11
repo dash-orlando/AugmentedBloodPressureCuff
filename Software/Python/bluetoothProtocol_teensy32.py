@@ -19,28 +19,34 @@ import serial
 import time
 from timeStamp import *
 import protocolDefinitions as definitions
+from multiprocessing import Queue
 
-"""
+
 # Find RF Device
 #   This function uses the hardware of the peripheral device or control system to scan/find bluetooth enabled devices
 #   This function does not differenciate among found devices
 #   Input   ::  None
 #   Output  ::  {array, list} "availableDeviceNames", "availableDeviceBTAddresses"
-def findDevices():
+def findDevices(q):
     print fullStamp() + " findDevices()"
     devices = bluetooth.discover_devices(
-        duration=20,                                                                        # Search timeout
+        duration=5,                                                                        # Search timeout
         lookup_names=True)                                                                  # Search and acquire names of antennas
     Ndevices = len(devices)                                                                 # Number of detected devices
     availableDeviceNames = []                                                               # Initialized arrays/lists for device names...
     availableDeviceBTAddresses = []                                                         # ...and their bluetooth addresses
     for i in range(0,Ndevices):                                                             # Populate device name and bluetooth address arrays/lists with a for-loop
+
         availableDeviceNames.append(devices[i][1])
+        
         availableDeviceBTAddresses.append(devices[i][0])
+        
     print fullStamp() + " Devices found (names): " + str(availableDeviceNames)              # Print the list of devices found
     print fullStamp() + " Devices found (addresses): " + str(availableDeviceBTAddresses)    # Print the list of addresses for the devices found
-    return availableDeviceNames, availableDeviceBTAddresses                                 # Return arrays/lists of devices and bluetooth addresses
-
+    q.put(availableDeviceNames)
+    q.put(availableDeviceBTAddresses)
+    #return availableDeviceNames, availableDeviceBTAddresses                                 # Return arrays/lists of devices and bluetooth addresses
+"""
 # Identify Smart Devices - General
 #   This function searches through the list of detected devices and finds the smart devices corresponding to the input identifier
 #   Input   ::  {string}     "smartDeviceIdentifier"
