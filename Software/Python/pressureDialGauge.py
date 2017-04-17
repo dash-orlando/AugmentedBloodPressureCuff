@@ -114,8 +114,7 @@ class MyWindow(QtGui.QMainWindow):
     def scan_rfObject(self):
         """scan for available BT devices. return a list of tuples (num, name)"""
         available = []
-        #BT_name, BT_address = findSmartDevice('00:06:66:86:77:09')
-        BT_name, BT_address = findSmartDevice('00:06:66:7D:99:D9')
+        BT_name, BT_address = findSmartDevice('00:06:66:86:77:09')
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
         # return (name, btaddress)
