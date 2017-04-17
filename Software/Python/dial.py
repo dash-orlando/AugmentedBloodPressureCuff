@@ -66,7 +66,6 @@ class Ui_MainWindow(object):
         self.csecLabel.setSizePolicy(sizePolicy)
         self.csecLabel.setObjectName("csecLabel")
         self.verticalLayout.addWidget(self.csecLabel)
-        #self.csecLabel.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.csecLabel.setAlignment(QtCore.Qt.AlignCenter)
         font = QtGui.QFont()
         font.setPointSize(14)
@@ -84,6 +83,33 @@ class Ui_MainWindow(object):
         self.pushButton.setMaximumSize(QtCore.QSize(190, 16777215))
         self.pushButton.setObjectName("pushButton")
         self.verticalLayout.addWidget(self.pushButton)
+
+        # Setup "Paired" indicator
+        self.CommandLabel = QtGui.QLabel(self.centralwidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.CommandLabel.sizePolicy().hasHeightForWidth())
+        self.CommandLabel.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        font.setWeight(75)
+        font.setBold(True)
+        self.CommandLabel.setFont(font)
+        self.CommandLabel.setObjectName("CommandLabel")
+        self.verticalLayout.addWidget(self.CommandLabel)
+
+        # Setup dropdown list to choose device from
+        self.rfObjectSelect = QtGui.QComboBox(self.centralwidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.rfObjectSelect.sizePolicy().hasHeightForWidth())
+        self.rfObjectSelect.setSizePolicy(sizePolicy)
+        self.rfObjectSelect.setMaximumSize(QtCore.QSize(190, 16777215))
+        self.rfObjectSelect.setObjectName("rfObjectSelect")
+        self.verticalLayout.addWidget(self.rfObjectSelect)
+        
         # Release ports and close window on shutdown
         self.pushButton.clicked.connect(lambda: portRelease("rfcomm", 0))
         self.pushButton.clicked.connect(MainWindow.close)
@@ -92,12 +118,17 @@ class Ui_MainWindow(object):
         font.setBold(True)
         self.pushButton.setFont(font)
 
-        MainWindow.setCentralWidget(self.centralwidget)        
+        # Add final touches
         self.retranslateUi(MainWindow)
+        MainWindow.setCentralWidget(self.centralwidget)
+        QtCore.QObject.connect(self.rfObjectSelect, QtCore.SIGNAL("activated(QString)"), MainWindow.connectStethoscope)
+        QtCore.QObject.connect(self.pushButton, QtCore.SIGNAL("triggered()"), MainWindow.close)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Sphygnomanometer", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("MainWindow", "mmHg", None, QtGui.QApplication.UnicodeUTF8))
+        self.CommandLabel.setText(QtGui.QApplication.translate("MainWindow", "Select a Device", None, QtGui.QApplication.UnicodeUTF8))
         self.pushButton.setText(QtGui.QApplication.translate("MainWindow", "EXIT", None, QtGui.QApplication.UnicodeUTF8))
         self.csecLabel.setText(QtGui.QApplication.translate("MainWindow", "CSEC\nPD3D", None, QtGui.QApplication.UnicodeUTF8))
         
