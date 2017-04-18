@@ -8,14 +8,14 @@
 # Adapted from: John Harrison's original work
 # Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
 #
-# VERSION 0.3.5
+# VERSION 0.3.7
 #
 # CHANGELOG:
-#   1- Added the ability to choose from multiple devices to pair to
-#   2- If not paired, gauge will be greyed out and readings will take place
+#   1- No data output .txt will be created unless stethoscope is paired and running
+#   2- If not paired, gauge will be greyed out and no readings will take place
 #
 # KNOWN ISSUES:
-#   1- Dial screen will NOT appear until communication is established (look into threading)
+#   1- Searching for stethoscope puts everything on hold (inherit limitation of PyBluez)
 #
 '''
 
@@ -42,6 +42,7 @@ from    os                  import getcwd, path, makedirs   # Pathname manipulat
 # PD3D modules
 from    dial                        import Ui_MainWindow        # Imports pre-built dial guage from dial.py
 from    timeStamp                   import fullStamp            # Show date/time on console output
+from    stethoscopeProtocol         import statusEnquiry        # Stethoscope Status Enquiry
 from    stethoscopeProtocol         import startBPTachy         # Tachycardia
 from    stethoscopeProtocol         import startBPBrady         # Bradycardia
 from    stethoscopeProtocol         import stopBPAll            # Read the function's name
@@ -89,16 +90,38 @@ class MyWindow(QtGui.QMainWindow):
 
         # List all available BT devices
         for name,address in self.scan_rfObject():
-            #self.ui.rfObjectSelect.addItem(name)
             self.ui.rfObjectSelect.addItem(address)
 
     # Connect to stethoscope
     def connectStethoscope(self, address):
-        #self.thread.comport = str( deviceName )
         self.thread.deviceBTAddress = str( address )
-        self.ui.CommandLabel.setText( "Successfully Paired" )
         self.ui.Dial.setEnabled(True)
         self.ui.rfObjectSelect.setEnabled(False)
+
+        # ************************************************* #
+        #               DATA STORAGE: START                 #
+        # ************************************************* #
+
+        # Create data output folder/file
+        self.dataFileDir = getcwd() + "/dataOutput/" + fullStamp()
+        self.dataFileName = self.dataFileDir + "/output.txt"
+        if(path.exists(self.dataFileDir)) == False:
+            makedirs(self.dataFileDir)
+            print( fullStamp() + " Created data output folder" )
+
+        # Write basic information to the header of the data output file
+        with open(self.dataFileName, "a") as dataFile:
+            dataFile.write( "Date/Time: " + fullStamp() + "\n" )
+            dataFile.write( "Scenario: #" + str(scenarioNumber) + "\n" )
+            dataFile.write( "Device Name: " + deviceName + "\n" )
+            dataFile.write( "Units: seconds, kPa, mmHg" + "\n" )
+            dataFile.close()
+            print( fullStamp() + " Created data output .txt file" )
+            
+        # ************************************************* #
+        #               DATA STORAGE: END                   #
+        # ************************************************* #
+        
         # set timeout function for updates
         self.ctimer = QtCore.QTimer()
         self.ctimer.start(10)
@@ -118,7 +141,6 @@ class MyWindow(QtGui.QMainWindow):
         #BT_name, BT_address = findSmartDevice('00:06:66:7D:99:D9')
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
-        # return (name, btaddress)
         return available
     
 # ************************************************************************
@@ -133,7 +155,8 @@ class Worker(QtCore.QThread):
     normal = True
     playback = False
     
-    # Check if the sampling frequency criteria is met
+    # Define sasmpling frequency (units: sec) controls writing frequency
+    wFreq = 1 # CHANGE ME!!!
     wFreqTrigger = time.time()
     
     def __init__(self, parent = None):
@@ -156,6 +179,15 @@ class Worker(QtCore.QThread):
         try:
             self.rfObject = createPort( deviceName, port, self.deviceBTAddress, baudrate, attempts )
             print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
+            QtCore.QThread.sleep(2) #Delay for stability
+
+            # Send any byte to improve response time of stethoscope
+            if self.rfObject.isOpen == False:
+                self.rfObject.open()
+            self.status = statusEnquiry(self.rfObject, attempts)
+
+            if self.status == True:
+                self.owner.ui.CommandLabel.setText( "Successfully Paired" )
 
             # Save initial time since script launch
             # Used to timestamp the readings
@@ -163,13 +195,12 @@ class Worker(QtCore.QThread):
             
             while True:
                 self.owner.pressureValue = self.readPressure()
-                
-        except:
-            print( fullStamp() + " Failed to connect." )
-            #self.deviceBTAddress = 'none'
-            #self.owner.ui.Dial.setEnabled(False)
-            #self.owner.ui.rfObjectSelect.setEnabled(True)
-           
+
+        except Exception as instance:
+            print( fullStamp() + " Failed to connect" )
+            print( fullStamp() + " Exception or Error Caught" )
+            print( fullStamp() + " Error Type " + str(type(instance)) )
+            print( fullStamp() + " Error Arguments " + str(instance.args) )
             
     def readPressure(self):
 
@@ -180,7 +211,7 @@ class Worker(QtCore.QThread):
         mmHg = pressure*760/101.3
 
         # Check if we should write to file or not yet
-        if (time.time() - self.wFreqTrigger) >= wFreq:
+        if (time.time() - self.wFreqTrigger) >= self.wFreq:
             # Reset wFreqTrigger
             self.wFreqTrigger = time.time()
 
@@ -188,31 +219,31 @@ class Worker(QtCore.QThread):
             dataStream = ("%.02f, %.2f, %.2f\n" %((time.time()-self.startTime), pressure, mmHg) )
 
             # Write to file
-            with open(dataFileName, "a") as dataFile:
+            with open(self.owner.dataFileName, "a") as dataFile:
                 dataFile.write(dataStream)
                 dataFile.close()
 
         # Error handling in case BT communication fails (1)    
         try:
             # Start augmenting when entering the specified pressure interval
-            if (mmHg >= 60) and (mmHg <= 100) and (self.playback == False):
+            if (mmHg >= 55) and (mmHg <= 105) and (self.playback == False):
                 self.normal = False
                 self.playback = True
                 if self.rfObject.isOpen == False:
                     self.rfObject.open()
                 # Send start playback command as a background process
-                u = Process( target=startBPTachy, args=(self.rfObject, 3,) )
+                u = Process( target=startBPTachy, args=(self.rfObject, attempts,) )
                 u.start()
                 self.rfObject.close()
 
             # Stop augmenting when leaving the specified pressure interval
-            elif ((mmHg < 60) or (mmHg > 100)) and (self.normal == False):
+            elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
                 self.normal = True
                 self.playback = False
                 if self.rfObject.isOpen == False:
                     self.rfObject.open()
                 # Send stop playback command as a background process
-                v = Process( target=stopBPAll, args=(self.rfObject, 3,) )
+                v = Process( target=stopBPAll, args=(self.rfObject, attempts,) )
                 v.start()
                 self.rfObject.close()
                 
@@ -238,36 +269,8 @@ port = 0
 deviceName = "ABPC"
 #deviceBTAddress = ["00:06:66:86:76:E6", "00:06:66:7D:99:D9", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
 baudrate = 115200
-attempts = 5
-'''
-try:
-    rfObject = createPort(deviceName, port, deviceBTAddress[1], 115200, 5)
-except:
-    print( fullStamp() + " No Stethoscope detected." )
-    print( fullStamp() + " Please pair stethoscope to continue..." )
-'''
-# ************************************************************************
-# DATA STORAGE
-# wFreq (units: sec) controls writing frequency of data output
-# ************************************************************************
-wFreq = 1 # CHANGE ME!!!
+attempts = 3
 scenarioNumber = 1
-
-# Create data output folder/file
-dataFileDir = getcwd() + "/dataOutput/" + fullStamp()
-dataFileName = dataFileDir + "/output.txt"
-if(path.exists(dataFileDir)) == False:
-    makedirs(dataFileDir)
-    print( fullStamp() + " Created data output folder" )
-
-# Write basic information to the header of the data output file
-with open(dataFileName, "a") as dataFile:
-    dataFile.write( "Date/Time: " + fullStamp() + "\n" )
-    dataFile.write( "Scenario: #" + str(scenarioNumber) + "\n" )
-    dataFile.write( "Device Name: " + deviceName + "\n" )
-    dataFile.write( "Units: seconds, kPa, mmHg" + "\n" )
-    dataFile.close()
-    print( fullStamp() + " Created data output .txt file" )
 
 # ************************************************************************
 # MAKE IT ALL HAPPEN

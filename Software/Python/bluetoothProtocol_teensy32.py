@@ -73,7 +73,7 @@ def findSmartDevices(smartDeviceIdentifier, availableDeviceNames, availableDevic
 #   Output  ::  {array/list} "smartDeviceNames", "smartDeviceBTAddresses"
 def findSmartDevice( address_device2find ):
     print fullStamp() + " findSmartDevice()"
-    devices = bluetooth.discover_devices( duration=10, lookup_names=True )
+    devices = bluetooth.discover_devices( duration=5, lookup_names=True )
     availableDeviceName = []
     availableDeviceBTAddress = []
 
@@ -83,7 +83,7 @@ def findSmartDevice( address_device2find ):
             availableDeviceBTAddress.append(devices[i][0])
 
             print fullStamp() + " Found device with name: " + str(availableDeviceName)
-            print fullStamp() + " Found device with addresse: " + str(availableDeviceBTAddress)
+            print fullStamp() + " Found device with address: " + str(availableDeviceBTAddress)
             return availableDeviceName, availableDeviceBTAddress
 
     print fullStamp() + " Device with address " + address_device2find + " not found"
