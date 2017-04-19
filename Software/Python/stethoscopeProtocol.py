@@ -94,6 +94,8 @@ def statusEnquiry(rfObject,attempts):
         inByte = rfObject.read(size=1)                                                                          # Execute sendUntilRead() from bluetoothProtocol.py
         if inByte == definitions.ACK:                                                                           # Check for ACK / NAK response found through sendUntilRead()
                 print fullStamp() + " ACK Device READY"                                                         # ACK, in this case, translates to DEVICE READY
+                rfObject.close()
+                return True
         elif inByte == definitions.NAK:
                 print fullStamp() + " NAK Device NOT READY"
         else:
