@@ -2,17 +2,17 @@
 #
 # Read pressure sensor and display readings on a dial gauge
 #
-# Modified by: Mohammad Odeh
-# Date: March 7th, 2017
-#
 # Adapted from: John Harrison's original work
 # Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
 #
-# VERSION 0.3.7
+# Modified by: Mohammad Odeh
+# Date       : Mar. 7th, 2017
+# Updated    : Jun. 1st, 2017
+#
+# VERSION 0.4
 #
 # CHANGELOG:
-#   1- No data output .txt will be created unless stethoscope is paired and running
-#   2- If not paired, gauge will be greyed out and no readings will take place
+#   1- Switched entire communication protocol from PySerial in favor of PyBluez
 #
 # KNOWN ISSUES:
 #   1- Searching for stethoscope puts everything on hold (inherit limitation of PyBluez)
@@ -31,13 +31,13 @@ debug=0
 # ************************************************************************
 
 # Python modules
-import  sys, time, bluetooth, serial                        # 'nuff said
-import  Adafruit_ADS1x15                                    # Required library for ADC converter
-from    PyQt4               import QtCore, QtGui, Qt        # PyQt4 libraries required to render display
-from    PyQt4.Qwt5          import Qwt                      # Same here, boo-boo!
-from    numpy               import interp                   # Required for mapping values
-from    multiprocessing     import Process, Queue           # Run functions in parallel
-from    os                  import getcwd, path, makedirs   # Pathname manipulation for saving data output
+import  sys, time, bluetooth, serial                            # 'nuff said
+import  Adafruit_ADS1x15                                        # Required library for ADC converter
+from    PyQt4               import QtCore, QtGui, Qt            # PyQt4 libraries required to render display
+from    PyQt4.Qwt5          import Qwt                          # Same here, boo-boo!
+from    numpy               import interp                       # Required for mapping values
+from    threading           import Thread                       # Run functions in "parallel"
+from    os                  import getcwd, path, makedirs       # Pathname manipulation for saving data output
 
 # PD3D modules
 from    dial                        import Ui_MainWindow        # Imports pre-built dial guage from dial.py
@@ -47,7 +47,7 @@ from    stethoscopeProtocol         import startBPTachy         # Tachycardia
 from    stethoscopeProtocol         import startBPBrady         # Bradycardia
 from    stethoscopeProtocol         import stopBPAll            # Read the function's name
 from    bluetoothProtocol_teensy32  import findSmartDevice      # Scan for stethoscope of interest
-from    bluetoothProtocol_teensy32  import createPort           # Open BlueTooth port
+from    bluetoothProtocol_teensy32  import createBTPort         # Open BlueTooth port
 
 
 # ************************************************************************
@@ -141,11 +141,17 @@ class MyWindow(QtGui.QMainWindow):
     def scan_rfObject(self):
         """scan for available BT devices. return a list of tuples (num, name)"""
         available = []
-        BT_name, BT_address = findSmartDevice('00:06:66:86:77:09')
-        #BT_name, BT_address = findSmartDevice('00:06:66:7D:99:D9')
+        #BT_name, BT_address = findSmartDevice( deviceBTAddress[2] )
+        BT_name, BT_address = findSmartDevice( deviceBTAddress[0] )
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
         return available
+
+##    # TESTING STUFF HERE!
+##    def populateList(self):
+##        # List all available BT devices
+##        for name,address in self.scan_rfObject():
+##            self.ui.rfObjectSelect.addItem(address)
     
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
@@ -181,14 +187,12 @@ class Worker(QtCore.QThread):
 
         # Establish communication after a device is selected
         try:
-            self.rfObject = createPort( deviceName, port, self.deviceBTAddress, baudrate, attempts )
+            self.rfObject = createBTPort( self.deviceBTAddress, port )
             print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
             QtCore.QThread.sleep(2) #Delay for stability
 
-            # Send any byte to improve response time of stethoscope
-            if self.rfObject.isOpen == False:
-                self.rfObject.open()
-            self.status = statusEnquiry(self.rfObject, attempts)
+            # Send an enquiry byte
+            self.status = statusEnquiry( self.rfObject )
 
             if self.status == True:
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
@@ -234,23 +238,17 @@ class Worker(QtCore.QThread):
             if (mmHg >= 55) and (mmHg <= 105) and (self.playback == False):
                 self.normal = False
                 self.playback = True
-                if self.rfObject.isOpen == False:
-                    self.rfObject.open()
-                # Send start playback command as a background process
-                u = Process( target=startBPTachy, args=(self.rfObject, attempts,) )
-                u.start()
-                self.rfObject.close()
+
+                # Send start playback command from a separate thread
+                Thread( target=startBPTachy, args=(self.rfObject,) ).start()
 
             # Stop augmenting when leaving the specified pressure interval
             elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
                 self.normal = True
                 self.playback = False
-                if self.rfObject.isOpen == False:
-                    self.rfObject.open()
-                # Send stop playback command as a background process
-                v = Process( target=stopBPAll, args=(self.rfObject, attempts,) )
-                v.start()
-                self.rfObject.close()
+
+                # Send stop playback command from a separate thread
+                Thread( target=stopBPAll, args=(self.rfObject,) ).start()
                 
         # Error handling in case BT communication fails (2)        
         except Exception as instance:
@@ -258,23 +256,24 @@ class Worker(QtCore.QThread):
             print( fullStamp() + " Exception or Error Caught" )
             print( fullStamp() + " Error Type " + str(type(instance)) )
             print( fullStamp() + " Error Arguments " + str(instance.args) )
-            print( fullStamp() + " Closing Open Ports..." )
+            print( fullStamp() + " Closing/Reopening Ports..." )
 
-            if self.rfObject.isOpen == True:
-                self.rfObject.close()
-                print( fullStamp() + " ...Success!\n" )
-                
-        return(mmHg)
+            # Close port then reopen
+            self.rfObject.close()
+            self.rfObject = createBTPort( self.deviceBTAddress, port )
+
+            print( fullStamp() + " Successful" )
+
+        finally:
+            return(mmHg)
 
 
 # ************************************************************************
 # ESTABLISH COMMUNICATION
 # ************************************************************************
-port = 0
+port = 1
 deviceName = "ABPC"
-#deviceBTAddress = ["00:06:66:86:76:E6", "00:06:66:7D:99:D9", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
-baudrate = 115200
-attempts = 3
+deviceBTAddress = ["00:06:66:86:60:02", "00:06:66:7D:99:D9", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
 scenarioNumber = 1
 
 # ************************************************************************
