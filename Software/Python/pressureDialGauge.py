@@ -152,7 +152,7 @@ class MyWindow(QtGui.QMainWindow):
 ##        # List all available BT devices
 ##        for name,address in self.scan_rfObject():
 ##            self.ui.rfObjectSelect.addItem(address)
-    
+
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
 # ************************************************************************

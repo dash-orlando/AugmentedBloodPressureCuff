@@ -22,7 +22,6 @@ import  os, time, serial
 import  protocolDefinitions as definitions
 from    timeStamp           import *
 
-
 # Find RF Device
 #   This function uses the hardware of the peripheral device or control system to scan/find bluetooth enabled devices
 #   This function does not differenciate among found devices
@@ -37,6 +36,7 @@ def findDevices():
     availableDeviceBTAddresses = []                                                         # ...and their bluetooth addresses
 
     for i in range(0,Ndevices):                                                             # Populate device name and bluetooth address arrays/lists with a for-loop
+
         availableDeviceNames.append(devices[i][1])
         availableDeviceBTAddresses.append(devices[i][0])
         
@@ -49,7 +49,6 @@ def findDevices():
 #   This function searches through the list of detected devices and finds the specific smart device corresponding to the input name
 #   Input   ::  {string}     "smartDeviceAddress"
 #   Output  ::  {array/list} "smartDeviceNames", "smartDeviceBTAddresses"
-
 def findSmartDevice( address_device2find ):
     print( fullStamp() + " findSmartDevice()" )
     
@@ -61,14 +60,14 @@ def findSmartDevice( address_device2find ):
         if devices[i][0] == address_device2find:
             availableDeviceName.append(devices[i][1])
             availableDeviceBTAddress.append(devices[i][0])
-
+            
             print( fullStamp() + " Found device with name: " + str(availableDeviceName) )
             print( fullStamp() + " Found device with address: " + str(availableDeviceBTAddress) )
+
             return availableDeviceName, availableDeviceBTAddress
 
     print( fullStamp() + " Device with address " + address_device2find + " not found" )
     return 0, 0
-
 
 #   Create Port
 def createBTPort( bt_addr, port ):

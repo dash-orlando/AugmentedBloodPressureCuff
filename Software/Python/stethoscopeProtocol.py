@@ -105,7 +105,6 @@ def statusEnquiry( rfObject ):
     else:
         print fullStamp() + " Please troubleshoot device"
 
-
 # Operational Functions
 #       These functions deal with the normal operation of the device
 
@@ -392,7 +391,6 @@ def startBPTachy( rfObject ):
 
     else:
         print fullStamp() + " Please troubleshoot device"
-
 
 # Stop All
 #       This function stops all augmentation
