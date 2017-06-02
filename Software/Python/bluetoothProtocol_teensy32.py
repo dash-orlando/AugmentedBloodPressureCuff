@@ -99,7 +99,9 @@ def BTconnectionCheck( socket ):
 
 #   Why not?
 def closeBTPort( socket ):
+    print( fullStamp() + " closeBTPort()" )
     socket.close()
+    print( fullStamp() + " Port Closed" )
 
 
 

@@ -2,13 +2,13 @@
 #
 # Pressure Cuff Dial Gauge Window Setup
 #
-# Adapted by: Mohammad Odeh
-# Date: March 7th, 2017
+# Adapted by : Mohammad Odeh
+# Date       : Mar. 7th, 2017
+# Updated    : Jun. 1st, 2017
 #
 '''
 
 from PyQt4              import QtCore, QtGui
-from bluetoothProtocol  import portRelease
 
 # Get screen resolution for automatic sizing
 
@@ -24,7 +24,6 @@ class Ui_MainWindow(object):
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
-        #self.verticalLayout = QtGui.QGridLayout(self.centralwidget)
         self.verticalLayout.setObjectName("verticalLayout")
 
         # Setup label (display mmHg)
@@ -58,22 +57,6 @@ class Ui_MainWindow(object):
         self.Dial.setObjectName("Dial")
         self.verticalLayout.addWidget(self.Dial)
 
-##        # Setup Labels (CSEC, PD3D, etc...)
-##        self.csecLabel = QtGui.QLabel(self.centralwidget)
-##        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
-##        sizePolicy.setHorizontalStretch(0)
-##        sizePolicy.setVerticalStretch(0)
-##        sizePolicy.setHeightForWidth(self.csecLabel.sizePolicy().hasHeightForWidth())
-##        self.csecLabel.setSizePolicy(sizePolicy)
-##        self.csecLabel.setObjectName("csecLabel")
-##        self.verticalLayout.addWidget(self.csecLabel)
-##        self.csecLabel.setAlignment(QtCore.Qt.AlignCenter)
-##        font = QtGui.QFont()
-##        font.setPointSize(14)
-##        font.setWeight(75)
-##        font.setBold(False)
-##        self.csecLabel.setFont(font)
-
         # Setup pushbutton to pair device
         self.pushButtonPair = QtGui.QPushButton(self.centralwidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Fixed)
@@ -96,8 +79,46 @@ class Ui_MainWindow(object):
         self.pushButtonQuit.setMaximumSize(QtCore.QSize(190, 16777215))
         self.pushButtonQuit.setObjectName("pushButtonQuit")
         self.verticalLayout.addWidget(self.pushButtonQuit)
+        
+        # Release ports and close window on shutdown
+        self.pushButtonQuit.clicked.connect(MainWindow.close)
+
+        # Add final touches
+        self.retranslateUi(MainWindow)
+        MainWindow.setCentralWidget(self.centralwidget)
+        QtCore.QObject.connect(self.pushButtonPair, QtCore.SIGNAL("triggered()"), MainWindow.connectStethoscope)
+        QtCore.QObject.connect(self.pushButtonQuit, QtCore.SIGNAL("triggered()"), MainWindow.close)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Sphygnomanometer", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("MainWindow", "mmHg", None, QtGui.QApplication.UnicodeUTF8))
+        self.pushButtonQuit.setText(QtGui.QApplication.translate("MainWindow", "EXIT", None, QtGui.QApplication.UnicodeUTF8))
+        self.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Searching for stethoscope...", None, QtGui.QApplication.UnicodeUTF8))
+        
+from PyQt4 import Qwt5
 
 
+# ==============
+#   DEPRACATED
+# ==============
+'''
+##        # Setup Labels (CSEC, PD3D, etc...)
+##        self.csecLabel = QtGui.QLabel(self.centralwidget)
+##        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+##        sizePolicy.setHorizontalStretch(0)
+##        sizePolicy.setVerticalStretch(0)
+##        sizePolicy.setHeightForWidth(self.csecLabel.sizePolicy().hasHeightForWidth())
+##        self.csecLabel.setSizePolicy(sizePolicy)
+##        self.csecLabel.setObjectName("csecLabel")
+##        self.verticalLayout.addWidget(self.csecLabel)
+##        self.csecLabel.setAlignment(QtCore.Qt.AlignCenter)
+##        font = QtGui.QFont()
+##        font.setPointSize(14)
+##        font.setWeight(75)
+##        font.setBold(False)
+##        self.csecLabel.setFont(font)
+##
 ##        # Setup "Paired" indicator
 ##        self.CommandLabel = QtGui.QLabel(self.centralwidget)
 ##        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
@@ -123,29 +144,12 @@ class Ui_MainWindow(object):
 ##        self.rfObjectSelect.setMaximumSize(QtCore.QSize(190, 16777215))
 ##        self.rfObjectSelect.setObjectName("rfObjectSelect")
 ##        self.verticalLayout.addWidget(self.rfObjectSelect)
-        
-        # Release ports and close window on shutdown
-        self.pushButtonQuit.clicked.connect(lambda: portRelease("rfcomm", 0))
-        self.pushButtonQuit.clicked.connect(MainWindow.close)
-        #font.setPointSize(14)
-        #font.setWeight(75)
-        #font.setBold(True)
-        #self.pushButtonQuit.setFont(font)
-
-        # Add final touches
-        self.retranslateUi(MainWindow)
-        MainWindow.setCentralWidget(self.centralwidget)
-        QtCore.QObject.connect(self.pushButtonPair, QtCore.SIGNAL("triggered()"), MainWindow.connectStethoscope)
-        QtCore.QObject.connect(self.pushButtonQuit, QtCore.SIGNAL("triggered()"), MainWindow.close)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Sphygnomanometer", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("MainWindow", "mmHg", None, QtGui.QApplication.UnicodeUTF8))
-        #self.CommandLabel.setText(QtGui.QApplication.translate("MainWindow", "Select a Device", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButtonQuit.setText(QtGui.QApplication.translate("MainWindow", "EXIT", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Searching for stethoscope...", None, QtGui.QApplication.UnicodeUTF8))
-        #self.csecLabel.setText(QtGui.QApplication.translate("MainWindow", "CSEC\nPD3D", None, QtGui.QApplication.UnicodeUTF8))
-        
-from PyQt4 import Qwt5
-
+##
+##    def retranslateUi(self, MainWindow):
+##        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Sphygnomanometer", None, QtGui.QApplication.UnicodeUTF8))
+##        self.label.setText(QtGui.QApplication.translate("MainWindow", "mmHg", None, QtGui.QApplication.UnicodeUTF8))
+##        #self.CommandLabel.setText(QtGui.QApplication.translate("MainWindow", "Select a Device", None, QtGui.QApplication.UnicodeUTF8))
+##        self.pushButtonQuit.setText(QtGui.QApplication.translate("MainWindow", "EXIT", None, QtGui.QApplication.UnicodeUTF8))
+##        self.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Searching for stethoscope...", None, QtGui.QApplication.UnicodeUTF8))
+##        #self.csecLabel.setText(QtGui.QApplication.translate("MainWindow", "CSEC\nPD3D", None, QtGui.QApplication.UnicodeUTF8))
+'''

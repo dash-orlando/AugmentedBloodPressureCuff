@@ -9,29 +9,25 @@
 # Date       : Mar. 7th, 2017
 # Updated    : Jun. 1st, 2017
 #
-# VERSION 0.4
+# VERSION 0.4.1
 #
 # CHANGELOG:
 #   1- Switched entire communication protocol from PySerial in favor of PyBluez
+#   2- Program now closes BT port on exit
+#   3- Added option to change sampling frequency
 #
 # KNOWN ISSUES:
 #   1- Searching for stethoscope puts everything on hold (inherit limitation of PyBluez)
+#   2- If no BT device is connected, pushing exit will throw an error (but still closes program)
 #
 '''
-
-# ************************************************************************
-# DEBUG FLAG.
-# Developmental purposes ONLY!
-# ************************************************************************
-debug=0
-
 
 # ************************************************************************
 # IMPORT MODULES
 # ************************************************************************
 
 # Python modules
-import  sys, time, bluetooth, serial                            # 'nuff said
+import  sys, time, bluetooth, serial, argparse                  # 'nuff said
 import  Adafruit_ADS1x15                                        # Required library for ADC converter
 from    PyQt4               import QtCore, QtGui, Qt            # PyQt4 libraries required to render display
 from    PyQt4.Qwt5          import Qwt                          # Same here, boo-boo!
@@ -48,7 +44,19 @@ from    stethoscopeProtocol         import startBPBrady         # Bradycardia
 from    stethoscopeProtocol         import stopBPAll            # Read the function's name
 from    bluetoothProtocol_teensy32  import findSmartDevice      # Scan for stethoscope of interest
 from    bluetoothProtocol_teensy32  import createBTPort         # Open BlueTooth port
+from    bluetoothProtocol_teensy32  import closeBTPort          # Close BlueTooth port
 
+# ************************************************************************
+# CONSTRUCT ARGUMENT PARSER 
+# ************************************************************************
+ap = argparse.ArgumentParser()
+
+ap.add_argument("-f", "--frequency", type=int, default=1,
+                help="set sampling frequency (in secs).\nDefault=1")
+ap.add_argument("-d", "--debug", action='store_true',
+                help="invoke flag to enable debugging")
+
+args = vars( ap.parse_args() )
 
 # ************************************************************************
 # SETUP PROGRAM
@@ -60,10 +68,15 @@ class MyWindow(QtGui.QMainWindow):
     lastPressureValue = 0
     
     def __init__(self, parent=None):
+
+        # Initialize program and extract dial GUI
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.thread = Worker(self)
+
+        # Close rfObject socket on exit
+        self.ui.pushButtonQuit.clicked.connect( lambda: closeBTPort(self.thread.rfObject) )
 
         # Setup gauge-needle dimensions
         self.ui.Dial.setOrigin(90.0)
@@ -166,18 +179,18 @@ class Worker(QtCore.QThread):
     playback = False
     
     # Define sasmpling frequency (units: sec) controls writing frequency
-    wFreq = 1 # CHANGE ME!!!
+    wFreq = args["frequency"]
     wFreqTrigger = time.time()
     
     def __init__(self, parent = None):
         QtCore.QThread.__init__(self, parent)
         # self.exiting = False # not sure what this line is for
-        print( fullStamp() + " Initializing worker thread..." )
+        print( fullStamp() + " Initializing Worker Thread" )
         self.owner = parent
         self.start()
 
     def __del__(self):
-        print( fullStamp() + " Exiting worker thread..." )
+        print( fullStamp() + " Exiting Worker Thread" )
 
     def run(self):
         # this method is called by self.start() in __init__()
@@ -189,15 +202,18 @@ class Worker(QtCore.QThread):
         try:
             self.rfObject = createBTPort( self.deviceBTAddress, port )
             print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
-            QtCore.QThread.sleep(2) #Delay for stability
+
+            #Delay for stability
+            QtCore.QThread.sleep(2)
 
             # Send an enquiry byte
             self.status = statusEnquiry( self.rfObject )
 
             if self.status == True:
+                # Update labels
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
                 #self.owner.ui.CommandLabel.setText( "Successfully Paired" )
-
+            
             # Save initial time since script launch
             # Used to timestamp the readings
             self.startTime = time.time()
@@ -264,6 +280,7 @@ class Worker(QtCore.QThread):
 
             print( fullStamp() + " Successful" )
 
+        # Return pressure readings in either case
         finally:
             return(mmHg)
 
@@ -288,7 +305,7 @@ ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1    # Reads values in the range of +/-4.096V
 
 if __name__ == "__main__":
-    print( fullStamp() + " DialGauge booting..." )
+    print( fullStamp() + " Booting DialGauge" )
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
     MyApp.show()
