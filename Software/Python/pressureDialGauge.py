@@ -102,12 +102,16 @@ class MyWindow(QtGui.QMainWindow):
         self.ui.Dial.setValue(0)
 
         # List all available BT devices
-        for name,address in self.scan_rfObject():
-            if address is not None:
-                self.ui.pushButtonPair.setEnabled(True)
-                self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
-                self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
-            #self.ui.rfObjectSelect.addItem(address)
+        address = deviceBTAddress[1]
+        self.ui.pushButtonPair.setEnabled(True)
+        self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
+        self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
+##        for name,address in self.scan_rfObject():
+##            if address is not None:
+##                self.ui.pushButtonPair.setEnabled(True)
+##                self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
+##                self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
+##            #self.ui.rfObjectSelect.addItem(address)
 
     # Connect to stethoscope
     def connectStethoscope(self, address):
@@ -154,11 +158,10 @@ class MyWindow(QtGui.QMainWindow):
     def scan_rfObject(self):
         """scan for available BT devices. return a list of tuples (num, name)"""
         available = []
-        #BT_name, BT_address = findSmartDevice( deviceBTAddress[2] )
-        BT_name, BT_address = findSmartDevice( deviceBTAddress[0] )
+        BT_name, BT_address = findSmartDevice( deviceBTAddress[1] )
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
-        return available
+            return available
 
 ##    # TESTING STUFF HERE!
 ##    def populateList(self):
@@ -290,7 +293,7 @@ class Worker(QtCore.QThread):
 # ************************************************************************
 port = 1
 deviceName = "ABPC"
-deviceBTAddress = ["00:06:66:86:60:02", "00:06:66:7D:99:D9", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
+deviceBTAddress = ["00:06:66:86:60:02", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
 scenarioNumber = 1
 
 # ************************************************************************
