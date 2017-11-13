@@ -5,46 +5,41 @@ The following module consists of a list of commands or definitions to be used in
 
 Michael Xynidis
 Fluvio L Lobo Fenoglietto
-09/26/2016
+11/10/2017
 """
-# Definition                        Name                                            Value           Class
-# ----------                        ----                                            -----           -----
-ENQ = chr(0x05)                 #   Enquiry                                         0x05            STD
-ACK = chr(0x06)                 #   Positive Acknowledgement                        0x06            STD
-NAK = chr(0x15)                 #   Negative Acknowledgement                        0x15            STD
-
-# Device Control Commands
-#   We have extended the four (4) standard "device control" commands by means of a two-byte communication protocol
-
-DEVICEID        = chr(0x11)     #   Device Identification
-SDCHECK         = chr(0x12)     #   SD Card Check                                   0x00            ORG
-SENDWAV         = chr(0x13)     #   Send .WAV File                                  0x00            ORG
-DELVOLATILE     = chr(0x14)     #   Delete Volatile Files                           0x01            ORG
-STARTREC        = chr(0x16)     #   Start Recording                                 0x00            ORG
-STOPREC         = chr(0x17)     #   Stop Recording                                  0x01            ORG
-STARTPLAY       = chr(0x18)     #   Start Playback                                  0x02            ORG
-STOPPLAY        = chr(0x19)     #   Stop Playback                                   0x03            ORG
-STARTSTREAM     = chr(0x1A)     #   Start Microphone Stream                         0x04            ORG
-STARTTRACKING   = chr(0x1B)     #   Start Tracking Microphone Stream for Peaks      0x05            ORG
-STOPTRACKING    = chr(0x1C)     #   Stop Tracking Microphone Stream for Peaks       0x06            ORG
-NORMALHB        = chr(0x1D)     #   Playback of Normal Heart Beat                   0x00            ORG
-ESHMURMUR       = chr(0x1E)     #   Playback of Early Systolic Heart Beat           0x01            ORG
-STARTBLEND      = chr(0x1F)
-STOPBLEND       = chr(0x20)
-ESHMUR          = chr(0x21)
-EDHMUR          = chr(0x22)
-PEJECT          = chr(0x23)
-PSPLITP         = chr(0x24)
-ASYSL           = chr(0x25)
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- #
-
-STARTBPNORM     = chr(0x26)     #   Start BP Cuff augmentation -- Normal heartrate
-STARTBPBRADY    = chr(0x27)     #   Start BP Cuff augmentation -- Bradycardia
-STARTBPTACHY    = chr(0x28)     #   Start BP Cuff augmentation -- Tachycardia
-STOPBPALL       = chr(0x29)     #   Stop BP Cuff augmentation
 
 
-# Legend
-# STD - Standard terminology / Standard reference for command
-# ORG - Original or custom-made command and reference
+### ASCII Byte Codes -- used for communication protocol
+## General Commands
+ENQ				= chr(0x05)       # Enquiry: "Are you ready for commands?"										[resp: ACK | NAK]
+ACK             = chr(0x06)       # Positive Acknowledgement: "Command/Action successful."						[resp: ACK | NAK]
+NAK             = chr(0x15)       # Negative Acknowledgement: "Command/Action UNsuccessful."					[resp: ACK | NAK]
+
+### Device Control Commands
+## Diagnostic Functions ============================================================================================================= //
+DEVICEID       	= chr(0x11)       # Device Identification                                    					[resp: Device Code]
+SDCHECK         = chr(0x12)       # System Check: "Run system check and report"              					[resp: ACK | NAK]
+SENDWAV         = chr(0x13)       # Send .WAV file (audio recording) via serial port         					[resp: ACK | NAK]
+DELVOLATILE     = chr(0x14)       # Erase volatile files (all)                               					[resp: ACK | NAK]
+
+## Device-Specific Functions ======================================================================================================== //                     
+STARTREC        = chr(0x16)       # Start Recording                                          					[resp: ACK | NAK]
+STOPREC         = chr(0x17)       # Stop Recording                                           					[resp: ACK | NAK]
+STARTPLAY       = chr(0x18)       # Start Playback                                           					[resp: ACK | NAK]
+STOPPLAY        = chr(0x19)       # Stop Playback                                            					[resp: ACK | NAK]
+STARTPASSTHRU   = chr(0x1A)       # Start Audio passthrough from mic to ear monitors         					[resp: ACK | NAK]
+STARTHBMONITOR  = chr(0x1B)       # Start Monitoring Heart Beat                              					[resp: ACK | NAK]
+STOPHBMONITOR   = chr(0x1C)       # Stop Monitoring Heart Beat                               					[resp: ACK | NAK]
+STARTBLEND      = chr(0x1F)       # Start Blending
+STOPBLEND       = chr(0x20)       # Stop Blending
+
+## Simulation Functions ============================================================================================================= // 
+NHBSYN          = chr(0x1D)       # Playback of Synthetic, Normal Heart Beat                           			[resp: ACK | NAK]
+ESMSYN          = chr(0x1E)       # Playback of Synthetic, Early Systolic Heart Murmur                 			[resp: ACK | NAK]
+NHBREC          = chr(0x21)       # Blend Normal Heart Beat Recorded                                   			[resp: ACK | NAK]
+EHBREC          = chr(0x22)       # Blend Exercised Heart Beat Recorded                                			[resp: ACK | NAK]
+STARTBPNORM     = chr(0x26)       # Start BP Cuff augmentation -- Normal heartrate                     			[resp: ACK | NAK]
+STARTBPBRADY    = chr(0x27)       # Start BP Cuff augmentation -- Bradycardia                          			[resp: ACK | NAK]
+STARTBPTACHY    = chr(0x28)       # Start BP Cuff augmentation -- Tachycardia                          			[resp: ACK | NAK]
+STOPBPALL       = chr(0x29)       # Stop BP Cuff augmentation                                          			[resp: ACK | NAK]
+KOROT           = chr(0x30)       # Playback of Korotkoff Sound                                        			[resp: ACK | NAK] 

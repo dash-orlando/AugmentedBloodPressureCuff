@@ -40,7 +40,6 @@ from    dial                        import Ui_MainWindow        # Imports pre-bu
 from    timeStamp                   import fullStamp            # Show date/time on console output
 from    stethoscopeProtocol         import *					# import all functions from the stethoscope protocol
 from    bluetoothProtocol_teensy32  import *					# import all functions from the bluetooth protocol -teensy3.2
-import  stethoscopeDefinitions      as     definitions
 
 # ************************************************************************
 # CONSTRUCT ARGUMENT PARSER 
@@ -255,7 +254,7 @@ class Worker(QtCore.QThread):
                 self.playback = True
 
                 # Send start playback command from a separate thread
-                Thread( target=startBlending, args=(self.rfObject, definitions.KOROT, 3,) ).start()
+                Thread( target=startBPTachy, args=(self.rfObject,) ).start()
 
             # Stop augmenting when leaving the specified pressure interval
             elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
@@ -263,7 +262,7 @@ class Worker(QtCore.QThread):
                 self.playback = False
 
                 # Send stop playback command from a separate thread
-                Thread( target=stopBlending, args=(self.rfObject, 3,) ).start()
+                Thread( target=stopBPAll, args=(self.rfObject,) ).start()
                 
         # Error handling in case BT communication fails (2)        
         except Exception as instance:
@@ -289,7 +288,7 @@ class Worker(QtCore.QThread):
 # ************************************************************************
 port = 1
 deviceName = "ABPC"
-deviceBTAddress = ["00:06:66:8C:9C:2E", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
+deviceBTAddress = ["00:06:66:86:60:02", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
 scenarioNumber = 1
 
 # ************************************************************************
