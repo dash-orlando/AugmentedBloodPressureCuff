@@ -98,16 +98,10 @@ class MyWindow(QtGui.QMainWindow):
         self.ui.Dial.setValue(0)
 
         # List all available BT devices
-        address = deviceBTAddress[1]
+        address = deviceBTAddress[0]
         self.ui.pushButtonPair.setEnabled(True)
         self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
         self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
-##        for name,address in self.scan_rfObject():
-##            if address is not None:
-##                self.ui.pushButtonPair.setEnabled(True)
-##                self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
-##                self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
-##            #self.ui.rfObjectSelect.addItem(address)
 
     # Connect to stethoscope
     def connectStethoscope(self, address):
@@ -154,16 +148,11 @@ class MyWindow(QtGui.QMainWindow):
     def scan_rfObject(self):
         """scan for available BT devices. return a list of tuples (num, name)"""
         available = []
-        BT_name, BT_address = findSmartDevice( deviceBTAddress[1] )
+        BT_name, BT_address = findSmartDevice( deviceBTAddress[0] )
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
             return available
 
-##    # TESTING STUFF HERE!
-##    def populateList(self):
-##        # List all available BT devices
-##        for name,address in self.scan_rfObject():
-##            self.ui.rfObjectSelect.addItem(address)
 
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
@@ -199,14 +188,14 @@ class Worker(QtCore.QThread):
 
         # Establish communication after a device is selected
         try:
-            self.rfObject = createBTPort( self.deviceBTAddress, port )
+            self.rfObject = createPort( "device", port, self.deviceBTAddress, 115200, 5)
             print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
 
             #Delay for stability
             QtCore.QThread.sleep(2)
 
             # Send an enquiry byte
-            self.status = statusEnquiry( self.rfObject )
+            self.status = True#statusEnquiry( self.rfObject )
 
             if self.status == True:
                 # Update labels
@@ -241,11 +230,11 @@ class Worker(QtCore.QThread):
 
             # Format string
             dataStream = ("%.02f, %.2f, %.2f\n" %((time.time()-self.startTime), pressure, mmHg) )
-
-            # Write to file
-            with open(self.owner.dataFileName, "a") as dataFile:
-                dataFile.write(dataStream)
-                dataFile.close()
+##
+##            # Write to file
+##            with open(self.owner.dataFileName, "a") as dataFile:
+##                dataFile.write(dataStream)
+##                dataFile.close()
 
         # Error handling in case BT communication fails (1)    
         try:
@@ -289,7 +278,7 @@ class Worker(QtCore.QThread):
 # ************************************************************************
 port = 1
 deviceName = "ABPC"
-deviceBTAddress = ["00:06:66:8C:9C:2E", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
+deviceBTAddress = ["00:06:66:D0:E4:94", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
 scenarioNumber = 1
 
 # ************************************************************************
