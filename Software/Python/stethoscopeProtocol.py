@@ -319,7 +319,7 @@ def startBlending(rfObject,fileByte,attempts):
         else:
                 rfObject.close()
                 if attempts is not 0:
-                        return earlyHMBlending(rfObject,attempts-1)
+                        return startBlending(rfObject,fileByte,attempts-1)
                 elif attempts is 0:
                         print fullStamp() + " Attempts limit reached"
                         print fullStamp() + " Please troubleshoot device"
