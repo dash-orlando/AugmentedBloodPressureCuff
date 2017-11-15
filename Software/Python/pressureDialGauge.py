@@ -1,25 +1,26 @@
 '''
-#
-# Read pressure sensor and display readings on a dial gauge
-#
-# Adapted from: John Harrison's original work
-# Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
-#
-# Modified by: Mohammad Odeh
-# Date       : Mar. 7th, 2017
-# Updated    : Jun. 1st, 2017
-#
-# VERSION 0.4.1
-#
-# CHANGELOG:
-#   1- Switched entire communication protocol from PySerial in favor of PyBluez
-#   2- Program now closes BT port on exit
-#   3- Added option to change sampling frequency
-#
-# KNOWN ISSUES:
-#   1- Searching for stethoscope puts everything on hold (inherit limitation of PyBluez)
-#   2- If no BT device is connected, pushing exit will throw an error (but still closes program)
-#
+*
+* Read pressure sensor and display readings on a dial gauge
+*
+* Adapted from: John Harrison's original work
+* Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
+*
+* VERSION: 0.4.5
+*   - MODIFIED: Switched entire communication protocol from PySerial in favor of PyBluez
+*   - MODIFIED: Modified code to go along with the 2 I2C addresses
+*               fix provided by Danny
+*   - ADDED   : Program now closes BT port on exit
+*   - ADDED   : Change sampling frequency
+*
+* KNOWN ISSUES:
+*   - Searching for stethoscope puts everything on hold.    (Inherent limitation of PyBluez)
+*   - If no BT device is connected, pushing exit will
+*     throw an error.                                       (Program still closes fine)
+* 
+* AUTHOR                    :   Mohammad Odeh
+* DATE                      :   Mar. 07th, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Nov. 11th, 2017 Year of Our Lord
+*
 '''
 
 # ************************************************************************
@@ -38,8 +39,8 @@ from    os                  import getcwd, path, makedirs       # Pathname manip
 # PD3D modules
 from    dial                        import Ui_MainWindow        # Imports pre-built dial guage from dial.py
 from    timeStamp                   import fullStamp            # Show date/time on console output
-from    stethoscopeProtocol         import *					# import all functions from the stethoscope protocol
-from    bluetoothProtocol_teensy32  import *					# import all functions from the bluetooth protocol -teensy3.2
+from    stethoscopeProtocol         import *			# import all functions from the stethoscope protocol
+from    bluetoothProtocol_teensy32  import *			# import all functions from the bluetooth protocol -teensy3.2
 import  stethoscopeDefinitions      as     definitions
 
 # ************************************************************************
@@ -188,14 +189,14 @@ class Worker(QtCore.QThread):
 
         # Establish communication after a device is selected
         try:
-            self.rfObject = createPort( "device", port, self.deviceBTAddress, 115200, 5)
+            self.rfObject = createBTPort( self.deviceBTAddress, port )
             print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
 
             #Delay for stability
             QtCore.QThread.sleep(2)
 
             # Send an enquiry byte
-            self.status = True#statusEnquiry( self.rfObject )
+            self.status = statusEnquiry( self.rfObject )
 
             if self.status == True:
                 # Update labels
@@ -230,11 +231,11 @@ class Worker(QtCore.QThread):
 
             # Format string
             dataStream = ("%.02f, %.2f, %.2f\n" %((time.time()-self.startTime), pressure, mmHg) )
-##
-##            # Write to file
-##            with open(self.owner.dataFileName, "a") as dataFile:
-##                dataFile.write(dataStream)
-##                dataFile.close()
+
+            # Write to file
+            with open(self.owner.dataFileName, "a") as dataFile:
+                dataFile.write(dataStream)
+                dataFile.close()
 
         # Error handling in case BT communication fails (1)    
         try:
@@ -244,7 +245,7 @@ class Worker(QtCore.QThread):
                 self.playback = True
 
                 # Send start playback command from a separate thread
-                Thread( target=startBlending, args=(self.rfObject, definitions.KOROT, 3,) ).start()
+                Thread( target=startBlending, args=(self.rfObject, definitions.KOROT,) ).start()
 
             # Stop augmenting when leaving the specified pressure interval
             elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
@@ -252,7 +253,7 @@ class Worker(QtCore.QThread):
                 self.playback = False
 
                 # Send stop playback command from a separate thread
-                Thread( target=stopBlending, args=(self.rfObject, 3,) ).start()
+                Thread( target=stopBlending, args=(self.rfObject,) ).start()
                 
         # Error handling in case BT communication fails (2)        
         except Exception as instance:
@@ -298,5 +299,3 @@ if __name__ == "__main__":
     MyApp = MyWindow()
     MyApp.show()
     sys.exit(app.exec_())
-
-
