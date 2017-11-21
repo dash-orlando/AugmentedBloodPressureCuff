@@ -5,11 +5,12 @@
 * Adapted from: John Harrison's original work
 * Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
 *
-* VERSION: 0.4.7
+* VERSION: 0.4.8
 *   - MODIFIED: Switched entire communication protocol from PySerial in favor of PyBluez
 *   - ADDED   : Program now closes BT port on exit
 *   - ADDED   : Change sampling frequency
 *   - ADDED   : Ability to call this program from external GUI
+*   - ADDED   : Ability to select stethoscope address from external GUI
 *
 * KNOWN ISSUES:
 *   - Searching for stethoscope puts everything on hold.    (Inherent limitation of PyBluez)
@@ -18,7 +19,7 @@
 * 
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Mar. 07th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Nov. 15th, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Nov. 21st, 2017 Year of Our Lord
 *
 '''
 
@@ -54,6 +55,8 @@ ap.add_argument("-d", "--debug", action='store_true',
 ap.add_argument("--directory", type=str, default='output',
                 help="set directory")
 ap.add_argument("--destination", type=str, default="/output.txt",
+                help="set destination")
+ap.add_argument("--stethoscope", type=str, default="00:06:66:D0:E4:94",
                 help="set destination")
 
 args = vars( ap.parse_args() )
@@ -102,7 +105,7 @@ class MyWindow(QtGui.QMainWindow):
         self.ui.Dial.setValue(0)
 
         # List all available BT devices
-        address = deviceBTAddress[0]
+        address = args["stethoscope"] 
         self.ui.pushButtonPair.setEnabled(True)
         self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
         self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
@@ -152,7 +155,7 @@ class MyWindow(QtGui.QMainWindow):
     def scan_rfObject(self):
         """scan for available BT devices. return a list of tuples (num, name)"""
         available = []
-        BT_name, BT_address = findSmartDevice( deviceBTAddress[0] )
+        BT_name, BT_address = findSmartDevice( args["stethoscope"] )
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
             return available
@@ -282,7 +285,6 @@ class Worker(QtCore.QThread):
 # ************************************************************************
 port = 1
 deviceName = "ABPC"
-deviceBTAddress = ["00:06:66:D0:E4:94", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
 scenarioNumber = 1
 
 # ************************************************************************
@@ -296,9 +298,11 @@ V_supply = 3.3
 ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1    # Reads values in the range of +/-4.096V
 
-def main( arg1, arg2 ):
+def main( arg1, arg2, arg3 ):
     args["directory"] = arg1
     args["destination"] = arg2
+    args["stethoscope"] = arg3
+    
     print( fullStamp() + " Booting DialGauge" )
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
