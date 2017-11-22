@@ -5,12 +5,13 @@
 * Adapted from: John Harrison's original work
 * Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
 *
-* VERSION: 0.4.8
+* VERSION: 0.4.9
 *   - MODIFIED: Switched entire communication protocol from PySerial in favor of PyBluez
 *   - ADDED   : Program now closes BT port on exit
 *   - ADDED   : Change sampling frequency
 *   - ADDED   : Ability to call this program from external GUI
 *   - ADDED   : Ability to select stethoscope address from external GUI
+*   - FIXED   : Properly spwan script from another script
 *
 * KNOWN ISSUES:
 *   - Searching for stethoscope puts everything on hold.    (Inherent limitation of PyBluez)
@@ -19,7 +20,7 @@
 * 
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Mar. 07th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Nov. 21st, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Nov. 22nd, 2017 Year of Our Lord
 *
 '''
 
@@ -297,17 +298,9 @@ V_supply = 3.3
 # Initialize ADC
 ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1    # Reads values in the range of +/-4.096V
-
-def main( arg1, arg2, arg3 ):
-    args["directory"] = arg1
-    args["destination"] = arg2
-    args["stethoscope"] = arg3
-    
+if __name__ == "__main__":
     print( fullStamp() + " Booting DialGauge" )
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
     MyApp.show()
     sys.exit(app.exec_())
-    
-if __name__ == "__main__":
-    sys.exit( main() )

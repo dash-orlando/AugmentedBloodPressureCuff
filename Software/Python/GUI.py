@@ -2,16 +2,17 @@
 *
 * GUI using appJar for Augmented Blood Pressure Cuff
 *
-* VERSION: 0.1.1
+* VERSION: 0.1.2
 *   - ADDED   : Initial version
 *   - ADDED   : Select stethoscope prior to launching dial
+*   - FIXED   : Properly implemented process spawning and stdout redirection
 *
 * KNOWN ISSUES:
 *   - None atm
 *
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Nov. 15th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Nov. 21st, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Nov. 22nd, 2017 Year of Our Lord
 *
 '''
 
@@ -19,6 +20,7 @@
 from    appJar                  import gui                  # Import GUI
 from    timeStamp               import fullStamp            # Show date/time on console output
 import  pressureDialGauge_GUI                               # Import pressureDialGauge
+import  pexpect                                             # Child process spawning and STDOUT redirection
 
 def press(button):
     """
@@ -39,7 +41,15 @@ def press(button):
                %(app.getOptionBox( "Steth.\t" ), stt) ) 
         print( "Storing under: %s\n" %dst )
         
-        pressureDialGauge_GUI.main( cty, dst, stt )         # Start dial gauge!
+        cmd = "python pressureDialGauge_GUI.py --directory %s --destination %s --stethoscope %s" %( cty, dst, stt )
+
+        child = pexpect.spawn(cmd, timeout=None)            # Spawn child
+
+        for line in child:                                  # Read STDOUT ...
+            out = line.strip('\n\r')                        # ... of spawned child ...
+            print( out )                                    # ... process and print.
+
+        child.close()                                       # Kill child process
 
 #
 # Create a dict with all the stethoscope addresses
