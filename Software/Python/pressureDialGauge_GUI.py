@@ -11,7 +11,7 @@
 *   - ADDED   : Change sampling frequency
 *   - ADDED   : Ability to call this program from external GUI
 *   - ADDED   : Ability to select stethoscope address from external GUI
-*   - FIXED   : Properly spwan script from another script
+*   - ADDED   : Tell stethoscope what name to record session under
 *
 * KNOWN ISSUES:
 *   - Searching for stethoscope puts everything on hold.    (Inherent limitation of PyBluez)
@@ -20,7 +20,7 @@
 * 
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Mar. 07th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Nov. 22nd, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Dec. 01st, 2017 Year of Our Lord
 *
 '''
 
@@ -55,7 +55,7 @@ ap.add_argument("-d", "--debug", action='store_true',
                 help="invoke flag to enable debugging")
 ap.add_argument("--directory", type=str, default='output',
                 help="set directory")
-ap.add_argument("--destination", type=str, default="/output.txt",
+ap.add_argument("--destination", type=str, default="output.txt",
                 help="set destination")
 ap.add_argument("--stethoscope", type=str, default="00:06:66:D0:E4:94",
                 help="set destination")
@@ -80,7 +80,7 @@ class MyWindow(QtGui.QMainWindow):
         self.thread = Worker(self)
 
         # Close rfObject socket on exit
-        self.ui.pushButtonQuit.clicked.connect( lambda: closeBTPort(self.thread.rfObject) )
+        self.ui.pushButtonQuit.clicked.connect( self.cleanUp )
 
         # Setup gauge-needle dimensions
         self.ui.Dial.setOrigin(90.0)
@@ -123,7 +123,7 @@ class MyWindow(QtGui.QMainWindow):
 
         # Create data output folder/file
         self.dataFileDir = getcwd() + "/dataOutput/" + args["directory"]
-        self.dataFileName = self.dataFileDir + args["destination"]
+        self.dataFileName = self.dataFileDir + "/" + args["destination"]
         if(path.exists(self.dataFileDir)) == False:
             makedirs(self.dataFileDir)
             print( fullStamp() + " Created data output folder" )
@@ -133,6 +133,7 @@ class MyWindow(QtGui.QMainWindow):
             dataFile.write( "Date/Time: " + fullStamp() + "\n" )
             dataFile.write( "Scenario: #" + str(scenarioNumber) + "\n" )
             dataFile.write( "Device Name: " + deviceName + "\n" )
+            dataFile.write( "Stethoscope ID: " + args["stethoscope"] + "\n" )
             dataFile.write( "Units: seconds, kPa, mmHg" + "\n" )
             dataFile.close()
             print( fullStamp() + " Created data output .txt file" )
@@ -161,6 +162,12 @@ class MyWindow(QtGui.QMainWindow):
             available.append( (BT_name[0], BT_address[0]) )
             return available
 
+    def cleanUp(self):
+        try:
+            stopRecording( self.thread.rfObject )
+            closeBTPort( self.thread.rfObject )
+        except:
+            print( "Device never connected. Closing GUI" )
 
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
@@ -208,6 +215,8 @@ class Worker(QtCore.QThread):
             if self.status == True:
                 # Update labels
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
+                parseString( self.rfObject, args["destination"] )
+                startRecording( self.rfObject )
                 #self.owner.ui.CommandLabel.setText( "Successfully Paired" )
             
             # Save initial time since script launch
@@ -252,7 +261,7 @@ class Worker(QtCore.QThread):
                 self.playback = True
 
                 # Send start playback command from a separate thread
-                Thread( target=startBlending, args=(self.rfObject, definitions.KOROT,) ).start()
+                #Thread( target=startBlending, args=(self.rfObject, definitions.KOROT,) ).start()
 
             # Stop augmenting when leaving the specified pressure interval
             elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
@@ -260,7 +269,7 @@ class Worker(QtCore.QThread):
                 self.playback = False
 
                 # Send stop playback command from a separate thread
-                Thread( target=stopBlending, args=(self.rfObject,) ).start()
+                #Thread( target=stopBlending, args=(self.rfObject,) ).start()
                 
         # Error handling in case BT communication fails (2)        
         except Exception as instance:
@@ -298,9 +307,14 @@ V_supply = 3.3
 # Initialize ADC
 ADC = Adafruit_ADS1x15.ADS1115()
 GAIN = 1    # Reads values in the range of +/-4.096V
-if __name__ == "__main__":
+
+def main():
+    
     print( fullStamp() + " Booting DialGauge" )
     app = QtGui.QApplication(sys.argv)
     MyApp = MyWindow()
     MyApp.show()
     sys.exit(app.exec_())
+    
+if __name__ == "__main__":
+    sys.exit( main() )

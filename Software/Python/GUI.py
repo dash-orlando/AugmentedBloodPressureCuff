@@ -2,17 +2,18 @@
 *
 * GUI using appJar for Augmented Blood Pressure Cuff
 *
-* VERSION: 0.1.2
+* VERSION: 0.1.3
 *   - ADDED   : Initial version
 *   - ADDED   : Select stethoscope prior to launching dial
 *   - FIXED   : Properly implemented process spawning and stdout redirection
+*   - MODIFIED: String format is changed to be compatible with stethoscope's format
 *
 * KNOWN ISSUES:
 *   - None atm
 *
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Nov. 15th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Nov. 22nd, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Nov. 01st, 2017 Year of Our Lord
 *
 '''
 
@@ -35,7 +36,7 @@ def press(button):
         cty = app.getOptionBox( "City\t\t" )                # Store City
         stt = stt_addr[ app.getOptionBox( "Steth.\t" ) ]    # Store Stethoscope
 
-        dst = "/ABPC_%s_%s_%s.txt" %(usr, cty, fullStamp()) # Create string
+        dst = "ABPC_%s_%s_%s.txt" %(usr, cty, fullStamp()) # Create string
         
         print( "Using Stethoscope %s with address %s"
                %(app.getOptionBox( "Steth.\t" ), stt) ) 

@@ -67,7 +67,38 @@ def deviceID( rfObject ):
 
     print inBytes
 
+#
+# Parse String
+#
+def parseString( rfObject, outString ):
+    """
+    Parse String
+    This function passes a string over bluetooth
+    """
 
+    print( fullStamp() + " parseString()" )
+
+    outByte = definitions.PSTRING
+    rfObject.send( outByte )
+    #time.sleep(0.25)
+    
+    rfObject.send( outString )
+    inByte = rfObject.recv(1)                      
+
+    if inByte == definitions.ACK:                     
+        print( fullStamp() + " ACK Device READY" )
+        return True
+    
+    elif inByte == definitions.NAK:
+        print( fullStamp() + " NAK Device NOT READY" )
+
+    else:
+        print( fullStamp() + " Please troubleshoot device" )
+
+
+#
+# SD Card Check
+#
 def sdCardCheck( rfObject ):
     """
     SD Card Check:

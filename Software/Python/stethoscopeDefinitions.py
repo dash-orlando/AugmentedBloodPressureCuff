@@ -32,6 +32,7 @@ STARTHBMONITOR  = chr(0x1B)       # Start Monitoring Heart Beat                 
 STOPHBMONITOR   = chr(0x1C)       # Stop Monitoring Heart Beat                               					[resp: ACK | NAK]
 STARTBLEND      = chr(0x1F)       # Start Blending
 STOPBLEND       = chr(0x20)       # Stop Blending
+PSTRING         = chr(0x31)       # Parse String
 
 ## Simulation Functions ============================================================================================================= // 
 NHBSYN          = chr(0x1D)       # Playback of Synthetic, Normal Heart Beat                           			[resp: ACK | NAK]
