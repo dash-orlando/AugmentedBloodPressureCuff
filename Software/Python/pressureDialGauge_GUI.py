@@ -167,7 +167,7 @@ class MyWindow(QtGui.QMainWindow):
             stopRecording( self.thread.rfObject )
             closeBTPort( self.thread.rfObject )
         except:
-            print( "Device never connected. Closing GUI" )
+            print( "Device never connected. Closing Dial." )
 
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD

@@ -2,10 +2,8 @@
 *
 * GUI using appJar for Augmented Blood Pressure Cuff
 *
-* VERSION: 0.1.3
-*   - ADDED   : Initial version
-*   - ADDED   : Select stethoscope prior to launching dial
-*   - FIXED   : Properly implemented process spawning and stdout redirection
+* VERSION: 0.2
+*   - ADDED   : Specify what sound type is being recorded
 *   - MODIFIED: String format is changed to be compatible with stethoscope's format
 *
 * KNOWN ISSUES:
@@ -35,8 +33,10 @@ def press(button):
         usr = app.getEntry( "ID\t\t" )                      # Store ID
         cty = app.getOptionBox( "City\t\t" )                # Store City
         stt = stt_addr[ app.getOptionBox( "Steth.\t" ) ]    # Store Stethoscope
+        snd = app.getOptionBox( "Sound.\t" )                # Store Sound type
 
-        dst = "ABPC_%s_%s_%s.txt" %(usr, cty, fullStamp()) # Create string
+        dst = "ABPC_%s_%s_%s_%s.txt" %(usr, cty,
+                                       snd, fullStamp())    # Create string
         
         print( "Using Stethoscope %s with address %s"
                %(app.getOptionBox( "Steth.\t" ), stt) ) 
@@ -62,7 +62,7 @@ stt_addr = { 'AS001': "00:06:66:D0:E4:37",
 #
 # Set up
 #
-app = gui( "Login Window", "600x600" )                      # Create a GUI variable (Length x Height)
+app = gui( "Login Window", "650x650" )                      # Create a GUI variable (Length x Height)
 app.setBg( "black" )                                        # Set GLOBAL background color
 app.setFont( 20 )                                           # Set GLOBAL font size
 
@@ -82,7 +82,7 @@ app.setFocus( "ID\t\t" )                                    # Start the GUI with
 app.addLabelOptionBox( "City\t\t",                          # Create a dropdown menu for city
                       ["Orlando",
                        "Houston",
-                       "Racoon City",
+                       "RacoonCity",
                        "Gotham"] )
 app.setLabelFg( "City\t\t", "gold" )                        # Set the color of 'City'
 
@@ -91,6 +91,11 @@ app.addLabelOptionBox( "Steth.\t",                          # Create a dropdown 
                        "AS002",
                        "AS003"] )
 app.setLabelFg( "Steth.\t", "gold" )                        # Set the color of 'Stethoscope'
+
+app.addLabelOptionBox( "Sound.\t",                          # Create a dropdown menu for sound type
+                      ["HeartBeat",
+                       "Korotkoff"] )
+app.setLabelFg( "Sound.\t", "gold" )                        # Set the color of 'Sound'
 
 app.addImage( "logo", "pd3d_inverted_with_title.gif" )      # Add PD3D Logo
 
