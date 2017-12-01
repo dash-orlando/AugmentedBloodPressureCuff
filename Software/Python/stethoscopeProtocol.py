@@ -34,7 +34,7 @@ def systemCheck( rfObject ):
     
     print( fullStamp() + " systemCheck()" )                                                             # Print function name
 
-    outByte = definitions.CHK                                                                           # Send CHK / System Check command - see protocolDefinitions.py                     
+    outByte = definitions.SDCHECK                                                                           # Send CHK / System Check command - see protocolDefinitions.py                     
     rfObject.send(outByte)
     inByte = rfObject.recv(1)                                                                           # Check for response
 
@@ -80,7 +80,6 @@ def parseString( rfObject, outString ):
 
     outByte = definitions.PSTRING
     rfObject.send( outByte )
-    #time.sleep(0.25)
     
     rfObject.send( outString )
     inByte = rfObject.recv(1)                      
@@ -180,6 +179,31 @@ def startRecording( rfObject ):
     else:
         print( fullStamp() + " Please troubleshoot device" )
 
+def startCustomRecording( rfObject, outString ):
+    """
+    Start Custom Recording
+    Begins recording to be saved undr a custom filename
+    """
+
+    print( fullStamp() + " startCustomRecording()" )
+    print( fullStamp() + " Parsing STARTCREC Byte" )
+    outByte = definitions.STARTCREC
+    rfObject.send( outByte )
+
+    #print( fullStamp() + " Parsing custom recording string = " + outString )
+    rfObject.send( outString )
+    inByte = rfObject.recv(1)                      
+
+    if inByte == definitions.ACK:                     
+        print( fullStamp() + " ACK Device will START RECORDING" )
+        print( fullStamp() + " ACK Device will RECORD under the " + outString + " filename")
+        return True
+    
+    elif inByte == definitions.NAK:
+        print( fullStamp() + " NAK Device CANNOT START RECORDING" )
+
+    else:
+        print( fullStamp() + " Please troubleshoot device" )
 
 def stopRecording( rfObject ):
     """

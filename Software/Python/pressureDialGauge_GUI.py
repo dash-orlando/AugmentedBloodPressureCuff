@@ -215,8 +215,8 @@ class Worker(QtCore.QThread):
             if self.status == True:
                 # Update labels
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
-                parseString( self.rfObject, args["destination"] )
-                startRecording( self.rfObject )
+                #parseString( self.rfObject, args["destination"] )
+                startCustomRecording( self.rfObject, args["destination"] )
                 #self.owner.ui.CommandLabel.setText( "Successfully Paired" )
             
             # Save initial time since script launch
