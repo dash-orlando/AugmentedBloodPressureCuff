@@ -35,8 +35,9 @@ def press(button):
         stt = stt_addr[ app.getOptionBox( "Steth.\t" ) ]    # Store Stethoscope
         snd = app.getOptionBox( "Sound.\t" )                # Store Sound type
 
-        dst = "ABPC_%s_%s_%s_%s.txt" %(usr, cty,
-                                       snd, fullStamp())    # Create string
+        dst = "%s%s%s%s" %(snd, usr, cty, fullStamp()[2:4])
+
+        #dst = "ABPC_%s_%s_%s_%s.txt" %(usr, cty, snd, fullStamp())    # Create string
         
         print( "Using Stethoscope %s with address %s"
                %(app.getOptionBox( "Steth.\t" ), stt) ) 
@@ -80,10 +81,11 @@ app.setLabelFg( "ID\t\t", "gold" )                          # Set the color of '
 app.setFocus( "ID\t\t" )                                    # Start the GUI with cursor in 'ID' box
 
 app.addLabelOptionBox( "City\t\t",                          # Create a dropdown menu for city
-                      ["Orlando",
-                       "Houston",
-                       "RacoonCity",
-                       "Gotham"] )
+                      ["FL",
+                       "TX",
+                       "GA",
+                       "PA",
+                       "CA"] )
 app.setLabelFg( "City\t\t", "gold" )                        # Set the color of 'City'
 
 app.addLabelOptionBox( "Steth.\t",                          # Create a dropdown menu for stethoscopes
@@ -93,8 +95,8 @@ app.addLabelOptionBox( "Steth.\t",                          # Create a dropdown 
 app.setLabelFg( "Steth.\t", "gold" )                        # Set the color of 'Stethoscope'
 
 app.addLabelOptionBox( "Sound.\t",                          # Create a dropdown menu for sound type
-                      ["HeartBeat",
-                       "Korotkoff"] )
+                      ["H",
+                       "K"] )
 app.setLabelFg( "Sound.\t", "gold" )                        # Set the color of 'Sound'
 
 app.addImage( "logo", "pd3d_inverted_with_title.gif" )      # Add PD3D Logo

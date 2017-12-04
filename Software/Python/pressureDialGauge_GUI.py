@@ -123,7 +123,7 @@ class MyWindow(QtGui.QMainWindow):
 
         # Create data output folder/file
         self.dataFileDir = getcwd() + "/dataOutput/" + args["directory"]
-        self.dataFileName = self.dataFileDir + "/" + args["destination"]
+        self.dataFileName = self.dataFileDir + "/" + args["destination"] + ".txt"
         if(path.exists(self.dataFileDir)) == False:
             makedirs(self.dataFileDir)
             print( fullStamp() + " Created data output folder" )
