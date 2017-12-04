@@ -164,7 +164,9 @@ class MyWindow(QtGui.QMainWindow):
 
     def cleanUp(self):
         try:
+            print( fullStamp() + " Stopping Recording")
             stopRecording( self.thread.rfObject )
+            QtCore.QThread.sleep(2)                             # this delay may be essential
             closeBTPort( self.thread.rfObject )
         except:
             print( "Device never connected. Closing Dial." )
