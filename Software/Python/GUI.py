@@ -56,7 +56,7 @@ def press(button):
 # Create a dict with all the stethoscope addresses
 #
 
-stt_addr = { 'AS001': "00:06:66:D0:E4:37",
+stt_addr = { 'AS001': "00:06:66:8C:D3:F6",
              'AS002': "00:06:66:8C:9C:2E",
              'AS003': "00:06:66:D0:E4:94" }
 #

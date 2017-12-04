@@ -19,8 +19,8 @@ width, height = screen_resolution.width(), screen_resolution.height()
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        #MainWindow.resize(500,500)
-        MainWindow.showFullScreen()
+        MainWindow.resize(500,500)
+        #MainWindow.showFullScreen()
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
