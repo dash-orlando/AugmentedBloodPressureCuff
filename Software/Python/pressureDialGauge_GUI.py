@@ -49,7 +49,7 @@ import  stethoscopeDefinitions      as     definitions
 # ************************************************************************
 ap = argparse.ArgumentParser()
 
-ap.add_argument("-f", "--frequency", type=int, default=1,
+ap.add_argument("-f", "--frequency", type=int, default=0.25,
                 help="set sampling frequency (in secs).\nDefault=1")
 ap.add_argument("-d", "--debug", action='store_true',
                 help="invoke flag to enable debugging")

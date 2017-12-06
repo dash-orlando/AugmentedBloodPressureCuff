@@ -1,5 +1,0 @@
-Date/Time: 2017-12-04-15-21-18
-Scenario: #1
-Device Name: ABPC
-Stethoscope ID: 00:06:66:8C:D3:F6
-Units: seconds, kPa, mmHg
