@@ -1,0 +1,62 @@
+*Pick And Place List
+*Company=
+*Author=
+*eMail=
+*
+*Project=Pressure Cuff
+*Date=13:50:53
+*CreatedBy=Fritzing 0.9.3b.04.19.5c895d327c44a3114e5fcc9d8260daf0cbb52806
+*
+*
+*Coordinates in mm, always center of component
+*Origin 0/0=Lower left corner of PCB
+*Rotation in degree (0-360, math. pos.)
+*
+*No;Value;Package;X;Y;Rotation;Side;Name
+1;;;22.5044;-14.8782;0;Bottom;Copper Fill24
+2;;;2.1336;-4.76889;0;Bottom;Copper Fill31
+3;;;24.6634;-3.40999;0;Bottom;Copper Fill12
+4;;;56.62;-14.1639;0;Bottom;blkr4
+5;;;26.6217;-19.7172;0;Bottom;TXT2
+6;;;35.4869;-34.9376;0;Bottom;TXT2
+7;;;42.4434;-3.40999;0;Bottom;Copper Fill19
+8;;;46.2153;-1.37799;0;Bottom;Copper Fill26
+9;;;25.3746;-18.6501;0;Bottom;Copper Fill2
+10;;;14.5034;-3.40999;0;Bottom;Copper Fill8
+11;;;24.1808;-14.8782;0;Bottom;Copper Fill25
+12;;;4.01357;-23.5131;0;Bottom;blkr6
+13;;;28.4353;-1.37799;0;Bottom;Copper Fill32
+14;;;27.2034;-3.40999;0;Bottom;Copper Fill13
+15;;;29.7434;-3.40999;0;Bottom;Copper Fill14
+16;;;44.9834;-3.40999;0;Bottom;Copper Fill20
+17;;;15.7353;-1.37799;0;Bottom;Copper Fill27
+18;;;40.2336;-10.4967;0;Bottom;Copper Fill3
+19;;;35.7662;-24.1041;0;Bottom;blkr5
+20;;;17.0434;-3.40999;0;Bottom;Copper Fill9
+21;;;20.8153;-5.64519;0;Bottom;Copper Fill28
+22;;;6.8834;-3.40999;0;Bottom;Copper Fill5
+23;;;19.5834;-3.40999;0;Bottom;Copper Fill10
+24;;;32.2834;-3.40999;0;Bottom;Copper Fill15
+25;;;26.6734;-17.3988;0;Bottom;TXT2
+26;;;17.2198;-28.2932;180;Bottom;Raspberry Pi 1
+27;;;3.83273;-23.2065;-90;Bottom;IMG1
+28;;;26.7459;-14.7476;0;Bottom;TXT2
+29;;;36.0553;-1.37799;0;Bottom;Copper Fill29
+30;;;3.0353;-5.64519;0;Bottom;Copper Fill30
+31;;;47.5234;-3.40999;0;Bottom;Copper Fill21
+32;;;35.6676;-37.5845;0;Bottom;TXT2
+33;;;4.3434;-3.40999;0;Bottom;Copper Fill4
+34;;;35.4188;-32.548;0;Bottom;TXT2
+35;;;9.4234;-3.40999;0;Bottom;Copper Fill6
+36;;;16.7346;-23.7322;-90;Bottom;Part2
+37;;;34.8234;-3.40999;0;Bottom;Copper Fill16
+38;;THT;46.6869;-36.4611;90;Top;J5
+39;;;50.0634;-3.40999;0;Bottom;Copper Fill22
+40;;;10.6553;-1.37799;0;Bottom;Copper Fill23
+41;;;37.3634;-3.40999;0;Bottom;Copper Fill17
+42;;;22.1234;-3.40999;0;Bottom;Copper Fill11
+43;;;29.7688;-22.8665;0;Bottom;Copper Fill1
+44;;;39.9034;-3.40999;0;Bottom;Copper Fill18
+45;;;27.1034;-12.1656;0;Bottom;TXT2
+46;;;27.2801;-27.7185;0;Bottom;TXT2
+47;;;11.9634;-3.40999;0;Bottom;Copper Fill7
