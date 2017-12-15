@@ -1,3 +1,22 @@
+/*
+   Built off of Michael Xynidis' ESP8266 Template.
+   Obtain magnetic field and acceleration vectors from IMU.
+   Obtained values take into account the magnetic field of the earth.
+   The magnitude of the magnetic field monitors the proximity of a magnet embedded on the stethoscope.
+   The pitch, roll derived with the addition of the accelerometer data monitors the orientation of the BP cuff.
+   A string compiled from the values of B, pitch, roll, and status is published through to an mqtt broker.
+
+   AUTHOR                  : Edward Daniel Nichols
+   LAST CONTRIBUTION DATE  : Dec. 14th, 2017, Year of Our Lord
+
+   CHANGELOG:-
+    1- New functions were defined to make the calculation of values simpler.
+    2- Full reporting to MQTT was implemented.
+    3- The speed of publishing to MQTT was significantly improved.
+    4- Orientation check feature (from roll) was included at Fluvio's request.
+*/
+
+/*Required local libraries */
 #include    "WifiFunctions.h"
 #include    "MqttFunctions.h"
 #include    "OtaFunctions.h"
@@ -5,49 +24,32 @@
 /*Magnetometer global setup */
 #include   <Wire.h>
 #include   <SparkFunLSM9DS1.h>
+
 #define     LSM9DS1_M             0x1E    // Would be 0x1C if SDO_M is LOW
 #define     LSM9DS1_AG            0x6B    // Would be 0x6A if SDO_AG is LOW
-#define     DECLINATION           6.3
-
-#define       CAL_INDEX   50
-#define       green       14
-#define       red         13
+#define     DECLINATION           6.3     // Geomagnetic field effect on 12/14/17 in Oviedo, FL
+#define     CAL_INDEX             50
+#define     MAGNET                14
+#define     ORIENTATION           13
 
 LSM9DS1 imu;                          // Instantiate sensor.
-double cal[3];
+double  H, roll, pitch;
 /*End Magnetometer global setup*/
 
+String  article;                      // String object to aggregate output for publishing.
 
 void setup()
 {
-  /* Start up the serial port connection */
+  /* Start up the serial port connection and announce title */
   Serial.begin( 115200 );
-  while ( !Serial.available() ) ;
-
-  /* Announce the title */
   Serial.println( "ESP8266 Mqtt IMU BP_Cuff Sensor" );
 
   /* Set up the WiFi as a station */
   WifiSetup();                                // Setup and connect to WiFi.
 
-  /* Set up the callback service routines for MQTT subscriptions */
-  //scenario.setCallback( scenarioCallback );   // Set up a 'Callback' function to service a subscription.
-  //devInput.setCallback( devInputCallback );     // Set up a 'Callback' function to service another subscription.
+  /* SEE DEPRECATED CODE: 1 */
 
-  //mqtt.subscribe( &scenario );                // Now, subscribe to the topics for which Callbacks have been set up.
-  //MQTT_connect( 100 );                        // Give MQTT enough time to receive the topic subscription.
-  //mqtt.subscribe( &devInput );
-  //MQTT_connect( 100 );
-
-  /* Set up the OTA function */
-  //if ( OTASetup() ) Serial.println( F("OTA Initialized") );
-  //else Serial.println( F("OTA Initialization failed") );
-
-  /* Just some info about system RAM; your code should go here... */
-  Serial.print( "available memory: " );
-  Serial.println( ESP.getFreeHeap() );
-
-  /*Setup magnetometer for the main loop */
+  /* Setup magnetometer for the main loop */
   Wire.begin();
   setupIMU();
 
@@ -56,121 +58,123 @@ void setup()
     setup();
   };
 
-  pinMode(green, OUTPUT);                 //Enable the red and green LEDs
-  pinMode(red, OUTPUT);
+  /* Enable the LEDs for visual cues */
+  pinMode(MAGNET, OUTPUT);                         //Enable the red and green LEDs
+  pinMode(ORIENTATION, OUTPUT);
 
-  for (int i = 0; i < CAL_INDEX; i++) {   //Zero the sensor.
-
-    while ( !imu.magAvailable() );
-    imu.readMag();
-
-    cal[0] += imu.calcMag( imu.mx );
-    cal[1] += imu.calcMag( imu.my );
-    cal[2] += imu.calcMag( imu.mz );
-
-    if ( i == CAL_INDEX - 1) {
-      cal[0] = cal[0] / CAL_INDEX;
-      cal[1] = cal[1] / CAL_INDEX;
-      cal[2] = cal[2] / CAL_INDEX;
-    };
-  };
-
-  Serial.println();
-  Serial.println("Calibration values: ");   //Print out the calibration values.
-  Serial.print("cal_x: ");
-  Serial.print(cal[0]);
-  Serial.print("\t");
-
-  Serial.print("cal_y: ");
-  Serial.print(cal[1]);
-  Serial.print("\t");
-
-  Serial.print("cal_z: ");
-  Serial.print(cal[2]);
-  Serial.println();
-
-  MQTT_connect( 50 );
+  /* Connect to the MQTT broker */
+  MQTT_connect( 250 );
 }
 
 
 void loop()
 {
-  /* These need to be the first two lines in the loop() */
-  //  ArduinoOTA.handle();                        // Check for OTA updates [Uncomment to enable]
-  //  MQTT_connect( 100 );                        // Do I even need one of these?
+  /* SEE DEPRECATED CODE: 2 */
 
-  /* Add user code below this line */
-  double now_mx, now_my, now_mz, B;
-  while ( !imu.magAvailable() );
-  imu.readMag();
-  now_mx = -1 * double(imu.calcMag(imu.my)) - cal[1];
-  now_my = -1 * double(imu.calcMag(imu.mx)) - cal[0];
-  now_mz = double(imu.calcMag(imu.mz)) - cal[2];
+  /* Calculate the values of interest.
+     [See function definitions below.] */
+  calcH();
+  calcAttitude();
 
-  Serial.print("mx, my, mz, B: ");
-  Serial.print(now_mx, 3);
-  Serial.print(", ");
-  Serial.print(now_my, 3);
-  Serial.print(", ");
-  Serial.print(now_mz, 3);
-
-  double now_ax, now_ay, now_az;
-  while ( !imu.accelAvailable());
-  imu.readAccel();
-  now_ax = double(imu.calcAccel(imu.ax));
-  now_ay = double(imu.calcAccel(imu.ay));
-  now_az = double(imu.calcAccel(imu.az));
-
-  B = abs(pow( pow(now_mx, 2.0) + pow(now_my, 2.0) + pow(now_mz, 2.0), 0.5));
-  Serial.print(", ");
-  Serial.print(B, 3);
+  /* Print the values to the Serial Bus. */
+  Serial.print("H mag: ");
+  Serial.print(H, 2);
   Serial.print("\t");
 
-  printAttitude(now_ax, now_ay, now_az, now_mx, now_my, now_mz);
+  Serial.print("Pitch: ");
+  Serial.print(pitch, 2);
+  Serial.print("\t");
 
-  Serial.print("Status: ");
-  if ( B < 1 ) {
-    digitalWrite(red, LOW);
-    digitalWrite(green, LOW);
-    Serial.print("Out of Range");
-  } else if ( B >= 5 ) {
-    digitalWrite(green, HIGH);
-    digitalWrite(red, LOW);
-    Serial.print("Perfect\t");
+  Serial.print("Roll: ");
+  Serial.print(roll, 2);
+  Serial.println();
+
+  /* Append the raw values, and formatting, to the article for publishing. */
+  article = String("\nH:\t");
+  article.concat(H);
+  article.concat("\n");
+
+  article.concat("pitch:\t");
+  article.concat(pitch);
+  article.concat("\n");
+
+  article.concat("roll:\t");
+  article.concat(roll);
+  article.concat("\n");
+
+  /* Append to string conditionally.
+     If the proximity of the stethoscope (magnet) is acceptable,
+     prepare to publish an OK. */
+  article.concat("Scope Proximity: \t");
+  if (H > 6) {
+    digitalWrite(MAGNET, HIGH);
+    article.concat("OK\n");
   } else {
-    digitalWrite(green, LOW);
-    digitalWrite(red, HIGH);
-    Serial.print("OK\t");
+    digitalWrite(MAGNET, LOW);
+    article.concat("\n");
   };
 
+  /* Append to string conditionally.
+     If the orientation is acceptable,
+     prepare to publish an OK. */
+  article.concat("Cuff Orientation: \t");
+  if (abs(roll) > 120) {
+    digitalWrite(ORIENTATION, HIGH);
+    article.concat("OK\n");
+  } else {
+    digitalWrite(ORIENTATION, LOW);
+    article.concat("\n");
+  };
+
+  /* Verify MQTT broker is connected. */
   if ( !mqtt.connected() )
     MQTT_connect(500);
 
+  /* Convert the String object to a character array, so that MQTT can actually publish it. */
+  char post[82];
+  article.toCharArray(post, 82);
+  devOutput.publish(post);
+
+  /* Delay to give MQTT time to catch up:
+     Value of about 200ms to 250ms is sufficient to maintain real-time throughput to screen via Chatterbox.
+  */
   delay(250);
-  bool published = devOutput.publish(B);
-  if ( published ) {
-    Serial.print("\t");
-    Serial.println("Successfully published.");
-  } else {
-    Serial.print("\t");
-    Serial.println("Failed to publish.");
-  };
-}
+};
 
-void printAttitude(float ax, float ay, float az, float mx, float my, float mz)
+
+void calcH() {
+  float now_mx, now_my, now_mz;
+  while ( !imu.magAvailable() );
+  imu.readMag();
+
+  now_mx = -1 * float(imu.calcMag(imu.my));
+  now_my = -1 * float(imu.calcMag(imu.mx));
+  now_mz = float(imu.calcMag(imu.mz));
+
+  /* H is a global variable, representing the magnitude of the magnetic field. */
+  H = abs(pow( pow(now_mx, 2.0) + pow(now_my, 2.0) + pow(now_mz, 2.0), 0.5));
+};
+
+
+void calcAttitude()
 {
-  double roll = atan2(ay, az);
-  double pitch = atan2(-ax, sqrt(ay * ay + az * az));
+  float now_ax, now_ay, now_az;
+  while ( !imu.accelAvailable());
+  imu.readAccel();
 
-  pitch *= 180.0 / PI;
-  roll  *= 180.0 / PI;
+  now_ax = float(imu.calcAccel(imu.ax));
+  now_ay = float(imu.calcAccel(imu.ay));
+  now_az = float(imu.calcAccel(imu.az));
 
-  Serial.print("Pitch, Roll: ");
-  Serial.print(pitch, 2);
-  Serial.print(", ");
-  Serial.print(roll, 2);
-  Serial.print("\t");
-}
+  /* roll is a global variable */
+  roll    = float( atan2(now_ay, now_az) );
+  roll   *= 180.0 / PI;
+
+  /* pitch is a global variable */
+  pitch   = float( atan2(-now_ax, sqrt(now_ay * now_ay + now_az * now_az)) );
+  pitch  *= 180.0 / PI;
+};
+
 
 void setupIMU() {
   imu.settings.device.commInterface = IMU_MODE_I2C; //
@@ -181,4 +185,27 @@ void setupIMU() {
   imu.settings.accel.enabled        = true;         // Enable accelerometer...
   imu.settings.mag.enabled          = true;         // Enable magnetometer...
   imu.settings.temp.enabled         = true;         // Enable temperature sensor...
-}
+};
+
+
+/* DEPRECATED CODE 1 */
+//scenario.setCallback( scenarioCallback );   // Set up a 'Callback' function to service a subscription.
+//devInput.setCallback( devInputCallback );     // Set up a 'Callback' function to service another subscription.
+
+//mqtt.subscribe( &scenario );                // Now, subscribe to the topics for which Callbacks have been set up.
+//MQTT_connect( 100 );                        // Give MQTT enough time to receive the topic subscription.
+//mqtt.subscribe( &devInput );
+//MQTT_connect( 100 );
+
+/* Set up the OTA function */
+//if ( OTASetup() ) Serial.println( F("OTA Initialized") );
+//else Serial.println( F("OTA Initialization failed") );
+
+/* Info about system RAM */
+//Serial.print( "available memory: " );
+//Serial.println( ESP.getFreeHeap() );
+
+
+/* DEPRECATED CODE 2 */
+//  ArduinoOTA.handle();                        // Check for OTA updates [Uncomment to enable]
+//  MQTT_connect( 100 );                        // Do I even need one of these?
