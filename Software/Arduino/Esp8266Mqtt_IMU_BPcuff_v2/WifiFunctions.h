@@ -36,7 +36,7 @@ boolean WifiSetup()
     if ( cnt == 40 )  // 40 for 20 seconds
     {
       int s = WiFi.status();
-      Serial.println( "Timed out connecting to WiFi." );
+      Serial.println( "Fuck you." );
       Serial.print( "WiFi status = " ); Serial.println( WiFiErrorCode( s ) );
       wifiFail = true;
 //      while ( true ) ;                // loop forever and wait for reset or wdt

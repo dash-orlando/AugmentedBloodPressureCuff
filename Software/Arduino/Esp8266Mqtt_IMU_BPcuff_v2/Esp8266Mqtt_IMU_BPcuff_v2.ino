@@ -50,7 +50,6 @@ void setup()
   /* SEE DEPRECATED CODE: 1 */
 
   /* Setup magnetometer for the main loop */
-  Wire.begin();
   setupIMU();
 
   if ( !imu.begin() ) {
@@ -115,10 +114,10 @@ void loop()
   };
 
   /* Append to string conditionally.
-     If the orientation is acceptable,
-     prepare to publish an OK. */
+   *  If the orientation is acceptable,
+      prepare to publish an OK. */
   article.concat("Cuff Orientation: \t");
-  if (abs(roll) > 120) {
+  if (abs(roll) < 80) {
     digitalWrite(ORIENTATION, HIGH);
     article.concat("OK\n");
   } else {
@@ -138,7 +137,7 @@ void loop()
   /* Delay to give MQTT time to catch up:
      Value of about 200ms to 250ms is sufficient to maintain real-time throughput to screen via Chatterbox.
   */
-  delay(250);
+  delay(1000);
 };
 
 
