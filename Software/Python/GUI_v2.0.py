@@ -33,11 +33,10 @@ def press(button):
         usr = app.getEntry( "ID\t\t" )                          # Store ID
         cty = app.getOptionBox( "City\t\t" )                    # Store City
         stt = stt_addr[ app.getOptionBox( "Steth.\t" ) ]        # Store Stethoscope
-        snd = app.getOptionBox( "Sound.\t" )                    # Store Sound type
 
-        dst = "%s%s%s%s" %(snd, usr, cty, fullStamp()[2:4])
+        #dst = "%s%s%s%s" %(snd, usr, cty, fullStamp()[2:4])
 
-        #dst = "ABPC_%s_%s_%s_%s.txt" %(usr, cty, snd, fullStamp())    # Create string
+        dst = "ABPC_%s_%s_%s_%s.txt" %(usr, cty, stt, fullStamp())    # Create string
         
         print( "Using Stethoscope %s with address %s"
                %(app.getOptionBox( "Steth.\t" ), stt) ) 
@@ -52,6 +51,8 @@ def press(button):
             print( out )                                        # ... process and print.
 
         child.close()                                           # Kill child process
+        app.destroySubWindow( win_name['2'] )
+        app.showSubWindow( win_name['1'] )
 
 # ---------------------------------------------------------------------------------
 
@@ -68,11 +69,10 @@ def launch_win( prompt ):
         #
         # Setup
         #
-        win_name = 'SP_ID_entry'                                # Give windows name
-        app.startSubWindow( win_name, modal=True )              # Start subwindow
+        app.startSubWindow( win_name['1'], modal=True )         # Start subwindow
         app.setBg( "black" )                                    # Set GLOBAL background color
         app.setFont( size=20 )                                  # Set GLOBAL font size
-        app.setSize( "fullscreen" )                            # Set geometry to fullscreen
+##        app.setSize( "fullscreen" )                            # Set geometry to fullscreen
 
         #
         # Add labels
@@ -81,7 +81,6 @@ def launch_win( prompt ):
         app.addLabel( label_name, "Enter SP ID" )               # Create a label
         app.setLabelFg( label_name, "gold" )                    # Set label's font color
         app.setLabelRelief( label_name, "raised" )              # Set relief to raised
-        app.setPadding([20,20])                                 # Pad outside the widgets
 
         #
         # Add textbox
@@ -97,16 +96,18 @@ def launch_win( prompt ):
         #
         # Add PD3D logo image
         # 
-        app.addImage( win_name, logo )                          # Add PD3D Logo
+        app.addImage( win_name['1'], logo )                     # Add PD3D Logo
 
         #
         # Start subWindow
         #
-        app.showSubWindow( win_name )
+        app.showSubWindow( win_name['1'] )
 
 # ---------------------------------------------------------------------------------
 
 def inst_win( prompt ):
+    
+    app.hideSubWindow( win_name['1'] )
     
     if( prompt == 'Begin' ):
         #
@@ -116,11 +117,10 @@ def inst_win( prompt ):
         #
         # Setup
         #
-        win_name = 'Intructions'                                # Give windows name
-        app.startSubWindow( win_name, modal=True )              # Start subwindow
+        app.startSubWindow( win_name['2'], modal=True )         # Start subwindow
         app.setBg( "black" )                                    # Set GLOBAL background color
         app.setFont( size=20 )                                  # Set GLOBAL font size
-        app.setSize( "fullscreen" )                             # Set geometry to fullscreen
+##        app.setSize( "fullscreen" )                             # Set geometry to fullscreen
         
         #
         # Add labels
@@ -128,13 +128,12 @@ def inst_win( prompt ):
         app.addLabel( "title_ABPC1", "Instructions" )           # Create a label
         app.setLabelFg( "title_ABPC1", "gold" )                 # Set label's font color
         app.setLabelRelief( "title_ABPC1", "raised" )           # Set relief to raised
-##        app.setPadding([20,20])                                 # Pad outside the widgets
 
         #
         # Add image
         #
         img = "image.gif"
-        app.addImage( win_name, img )                          # Add image
+        app.addImage( win_name['2'], img )                      # Add image
         
         #
         # Write down instructions
@@ -148,13 +147,14 @@ def inst_win( prompt ):
         #
         # Link buttons to functions
         #
-        app.addButtons( ["Start", "Stop"], launch_steth )         # Link buttons to launch_steth()
+        app.addButtons( ["Start", "Stop"], press )              # Link buttons to launch_steth()
+##        app.addButtons( ["Start", "Stop"], launch_steth )         # Link buttons to launch_steth()
 
 
         #
         # Start subWindow
         #
-        app.showSubWindow( win_name )
+        app.showSubWindow( win_name['2'] )
 
     else: app.stop()                                            # Kill program
 
@@ -171,7 +171,8 @@ def launch_steth( prompt ):
 
     else:
         print( "Gudbay ma fren" )
-        app.stop()
+        app.destroySubWindow( win_name['2'] )
+        app.showSubWindow( win_name['1'] )
 
 # ---------------------------------------------------------------------------------
 
@@ -189,10 +190,18 @@ global logo
 logo = "pd3d_inverted_with_title.gif"
 
 #
+# SubWindow name
+#
+global win_name
+win_name = { '1' : "SP ID"      ,
+             '2' : "Intructions",
+             '3' : "Nada"         }
+
+#
 # Set up
 #
 app = gui( "Login Window" )                                     # Create a GUI variable
-app.setSize( "fullscreen" )                                     # Launch in fullscreen
+##app.setSize( "fullscreen" )                                     # Launch in fullscreen
 app.setBg( "black" )                                            # Set GLOBAL background color
 app.setFont( size=20 )                                          # Set GLOBAL font size
 
