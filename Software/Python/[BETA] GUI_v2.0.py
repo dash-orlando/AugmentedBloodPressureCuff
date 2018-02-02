@@ -243,9 +243,6 @@ class GUI(object):
             
             self.app.addNamedButton( "Start", "Start",                  # Link 'Start' to start_stt()
                                      self.start_stt, row, 0 )           # Place to the left.
-            
-##            self.app.addNamedButton( "Stop", "Stop",            # Link 'Stop' to start_bpc()
-##                                     self.start_bpc, row, 1  )  # Place to the right.
 
             # Start subWindow
             self.app.showSubWindow( self.win_name['2'] )                # Make subWindow visible
@@ -276,16 +273,16 @@ class GUI(object):
                                  fullStamp()[2:4] )                     # Time
 
         # Establish connection
-        rfObject = createBTPort( self.stt, port )                       # Connect to device
-        status   = statusEnquiry( rfObject )                            # Send an enquiry byte
+        self.rfObject = createBTPort( self.stt, port )                  # Connect to device
+        self.status   = statusEnquiry( self.rfObject )                  # Send an enquiry byte
 
         # Check returned byte
-        if( status == True ):
-            startCustomRecording( rfObject, self.dst )                  # If all is good, start recording
+        if( self.status == True ):
+            startCustomRecording( self.rfObject, self.dst )             # If all is good, start recording
             startTime = time.time()                                     # Start timer
 
         else:                                                           # Else ...
-            closeBTPort( rfObject )                                     # Close connection
+            closeBTPort( self.rfObject )                                # Close connection
             self.app.stop()                                             # Kill program
 
         # This is me wasting time
@@ -293,12 +290,10 @@ class GUI(object):
             print( time.time() - startTime )
             pass
 
-        # Clean up and proceed
+        # Proceed
         row = self.app.getRow()-1                                       # Get current row and go up one
         self.app.addNamedButton( "Stop", "Stop",                        # Make 'Stop' visitble and link to start_bpc()
                                  self.start_bpc, row, 1  )              # Place to the right.
-        time.sleep( 0.1 )                                               # Wait for stability
-        closeBTPort( rfObject )                                         # Close connection
         
 # ------------------------------------------------------------------------
 
@@ -323,7 +318,12 @@ class GUI(object):
                                  fullStamp()[2:4] )                     # Time
 
         if( prompt == "Stop" ):
-            
+
+            # Disconnect device
+            stopRecording( self.rfObject )                              # Stop recording
+            closeBTPort( self.rfObject )                                # Close connection
+
+            # Print diagnostic information
             print( "Using Stethoscope %s with address %s"               # Inform user which ...
                    %(self.app.getOptionBox( "Steth.\t" ), self.stt) )   # ... stethoscope is used
             print( "Storing under: %s\n" %self.dst )                    # Inform of destination
