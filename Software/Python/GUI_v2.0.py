@@ -285,8 +285,8 @@ class GUI(object):
             self.app.stop()                                             # Kill program
 
         # This is me wasting time
-        while( time.time() - startTime < 5 ):                           # Ensure that user records at least this much time
-            print( time.time() - startTime )
+        while( time.time() - startTime < 10 ):                           # Ensure that user records at least this much time
+##            print( time.time() - startTime )
             pass
 
         # Proceed
