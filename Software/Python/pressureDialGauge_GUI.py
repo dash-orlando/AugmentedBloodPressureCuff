@@ -5,23 +5,18 @@
 * Adapted from: John Harrison's original work
 * Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
 *
-* VERSION: 0.4.10
-*   - MODIFIED: Switched entire communication protocol from PySerial in favor of PyBluez
-*   - ADDED   : Program now closes BT port on exit
-*   - ADDED   : Change sampling frequency
-*   - ADDED   : Ability to call this program from external GUI
-*   - ADDED   : Ability to select stethoscope address from external GUI
-*   - ADDED   : Tell stethoscope what name to record session under
-*   - MODIFIED: Major cleanup of code to better implement in GUI 2.0 [INCOMPLETE]
+* VERSION: 0.5
+*   - MODIFIED: This iteration of the pressureDialGauge is not intended
+*               as a standalone program. It is meant to work in conjunction
+*               with the appJar GUI. Attempting to run this program as a
+*               standalone will throw so many errors at you you will regret it!!!
 *
 * KNOWN ISSUES:
-*   - Searching for stethoscope puts everything on hold.    (Inherent limitation of PyBluez)
-*   - If no BT device is connected, pushing exit will
-*     throw an error.                                       (Program still closes fine)
+*   - Nada so far.
 * 
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Mar. 07th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Feb. 02nd, 2018 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Feb. 05th, 2018 Year of Our Lord
 *
 '''
 
@@ -114,6 +109,9 @@ class MyWindow(QtGui.QMainWindow):
         self.address = args["stethoscope"]
         self.mode = args["mode"]
 
+        # Boolean to control recording function
+        self.init_rec = True
+
         # List all available BT devices
         self.ui.pushButtonPair.setEnabled( True )
         self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
@@ -194,10 +192,14 @@ class MyWindow(QtGui.QMainWindow):
         """
         
         try:
-            print( fullStamp() + " Stopping Recording" )
-            stopRecording( self.thread.rfObject )                   #
-            QtCore.QThread.sleep( 2 )                               # this delay may be essential
-            closeBTPort( self.thread.rfObject )                     # 
+            if( self.init_rec == False ):
+                print( fullStamp() + " Stopping Recording" )
+                stopRecording( self.thread.rfObject )                   #
+                QtCore.QThread.sleep( 2 )                               # this delay may be essential
+
+            else:
+                closeBTPort( self.thread.rfObject )
+
         except:
             print( fullStamp() + " Device never connected. Closing Dial." )
 
@@ -236,16 +238,16 @@ class Worker( QtCore.QThread ):
         This method is called by self.start() in __init__()
         """
 
-        while( self.deviceBTAddress == 'none'):                                 # While no device is selected ...
-            time.sleep( 0.1 )                                                   # Do nothing
+        while( self.deviceBTAddress == 'none'):                                     # While no device is selected ...
+            time.sleep( 0.1 )                                                       # Do nothing
 
         try:
-            self.rfObject = createBTPort( self.deviceBTAddress, port )          # Establish communication
-            print( fullStamp() + " Opened " + str(self.deviceBTAddress) )       # Print Diagnostic information
+            self.rfObject = createBTPort( self.deviceBTAddress, port )              # Establish communication
+            print( fullStamp() + " Opened " + str(self.deviceBTAddress) )           # Print Diagnostic information
 
-            QtCore.QThread.sleep( 2 )                                           # Delay for stability
+            QtCore.QThread.sleep( 2 )                                               # Delay for stability
 
-            self.status = statusEnquiry( self.rfObject )                        # Send an enquiry byte
+            self.status = statusEnquiry( self.rfObject )                            # Send an enquiry byte
 
             if( self.status == True ):
                 # Update labels
@@ -253,90 +255,112 @@ class Worker( QtCore.QThread ):
                                                                                     "Paired",
                                                                                     None,
                                                                                     QtGui.QApplication.UnicodeUTF8) )
-                startCustomRecording( self.rfObject, self.owner.destination )   # Start recording
+                if( self.owner.mode == "REC" ):
+                    startCustomRecording( self.rfObject, self.owner.destination )   # Start recording
+                else: pass
             
-            self.startTime = time.time()                                        # Time since the initial reading
+            self.startTime = time.time()                                            # Time since the initial reading
             
             while True:
-                self.owner.pressureValue = self.readPressure()                  # 
+                self.owner.pressureValue = self.readPressure()                      # 
 
         except Exception as instance:
-            print( fullStamp() + " Failed to connect" )                         # Indicate error
-            print( fullStamp() + " Exception or Error Caught" )                 # ...
-            print( fullStamp() + " Error Type " + str(type(instance)) )         # ...
-            print( fullStamp() + " Error Arguments " + str(instance.args) )     # ...
+            print( fullStamp() + " Failed to connect" )                             # Indicate error
+            print( fullStamp() + " Exception or Error Caught" )                     # ...
+            print( fullStamp() + " Error Type " + str(type(instance)) )             # ...
+            print( fullStamp() + " Error Arguments " + str(instance.args) )         # ...
 
 # ------------------------------------------------------------------------
 
     def readPressure(self):
 
         # Compute pressure
-        V_analog  = ADC.read_adc( 0, gain=GAIN )                                # Convert analog readings to digital
-        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )        # Map the readings
-        pressure  = ( V_digital/V_supply - 0.04 )/0.018                         # Convert voltage to SI pressure readings
-        mmHg = pressure*760/101.3                                               # Convert SI pressure to mmHg
+        V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
+        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
+        P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
+        P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
 
         # Check if we should write to file or not yet
         if( time.time() - self.wFreqTrigger ) >= self.wFreq:
             
-            self.wFreqTrigger = time.time()                                     # Reset wFreqTrigger
+            self.wFreqTrigger = time.time()                                         # Reset wFreqTrigger
 
             # Write to file
-            dataStream = "%.02f, %.2f, %.2f\n" %( time.time()-self.startTime,   # Format readings
-                                                  pressure, mmHg )              # into desired form
+            dataStream = "%.02f, %.2f, %.2f\n" %( time.time()-self.startTime,       # Format readings
+                                                  P_Pscl, P_mmHg )                  # into desired form
             with open( self.owner.dataFileName, "a" ) as f:
-                f.write( dataStream )                                           # Write to file
-                f.close()                                                       # Close file
+                f.write( dataStream )                                               # Write to file
+                f.close()                                                           # Close file
 
-        # Error handling in case BT communication fails (1)    
+        if( self.owner.mode == "SIM" ): self.sim_mode( P_mmHg )                     # Trigger simulations mode (if --mode SIM)
+        else: self.rec_mode()                                                       # Trigger recording   mode (if --mide REC)
+   
+        return( P_mmHg )                                                            # Return pressure readings in mmHg
+
+# ------------------------------------------------------------------------
+
+    def sim_mode( self, P ):
+        """
+        In charge of triggering simulations
+        """
+        
+        # Error handling in case BT communication fails (1)
         try:
             # Entering simulation pressure interval
-            if (mmHg >= 55) and (mmHg <= 105) and (self.playback == False):
-                self.normal = False                                             # Turn OFF normal playback
-                self.playback = True                                            # Turn on simulation
+            if (P >= 75) and (P <= 125) and (self.playback == False):
+                self.normal = False                                                 # Turn OFF normal playback
+                self.playback = True                                                # Turn on simulation
 
-##                # Send start playback command from a separate thread
-##                Thread( target=startBlending,                                   # Send start byte
-##                        args=(self.rfObject, definitions.KOROT,) ).start()      #  ...
+                # Send start playback command from a separate thread
+                Thread( target=startBlending,                                       # Send start byte
+                        args=(self.rfObject, definitions.KOROT,) ).start()          #  ...
 
             # Leaving simulation pressure interval
-            elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
-                self.normal = True                                              # Turn ON normal playback
-                self.playback = False                                           # Turn OFF simulation
+            elif ((P < 75) or (P > 125)) and (self.normal == False):
+                self.normal = True                                                  # Turn ON normal playback
+                self.playback = False                                               # Turn OFF simulation
 
-##                # Send stop playback command from a separate thread
-##                Thread( target=stopBlending,                                    # Send stop byte
-##                        args=(self.rfObject,) ).start()                         # ...
-                
+                # Send stop playback command from a separate thread
+                Thread( target=stopBlending,                                        # Send stop byte
+                        args=(self.rfObject,) ).start()                             # ...
+
         # Error handling in case BT communication fails (2)        
         except Exception as instance:
-            print( "" )                                                         # ...
-            print( fullStamp() + " Exception or Error Caught" )                 # ...
-            print( fullStamp() + " Error Type " + str(type(instance)) )         # Indicate the error
-            print( fullStamp() + " Error Arguments " + str(instance.args) )     # ...
-            print( fullStamp() + " Closing/Reopening Ports..." )                # ...
+            print( "" )                                                             # ...
+            print( fullStamp() + " Exception or Error Caught" )                     # ...
+            print( fullStamp() + " Error Type " + str(type(instance)) )             # Indicate the error
+            print( fullStamp() + " Error Arguments " + str(instance.args) )         # ...
+            print( fullStamp() + " Closing/Reopening Ports..." )                    # ...
 
-            self.rfObject.close()                                               # Close communications
-            self.rfObject = createBTPort( self.deviceBTAddress, port )          # Reopen communications
+            self.rfObject.close()                                                   # Close communications
+            self.rfObject = createBTPort( self.deviceBTAddress, port )              # Reopen communications
 
             print( fullStamp() + " Successful" )
+# ------------------------------------------------------------------------
 
-        # Return pressure readings in either case
-        finally:
-            return( mmHg )                                                      # Return pressure readings in mmHg
+    def rec_mode( self ):
+        """
+        In charge of triggering recordings
+        """
+        
+        if( self.owner.init_rec == True ):
+            self.owner.init_rec = False
+            startCustomRecording( self.rfObject, self.owner.destination )           # If all is good, start recording
 
-
+        else: pass
+            
+            
 # ************************************************************************
 # ===========================> SETUP PROGRAM <===========================
 # ************************************************************************
-port = 1                                                                        # Port number to use in communication
-deviceName = "ABPC"                                                             # Designated device name
-scenarioNumber = 1                                                              # Device number
+port = 1                                                                            # Port number to use in communication
+deviceName = "ABPC"                                                                 # Designated device name
+scenarioNumber = 1                                                                  # Device number
 
-V_supply = 3.3                                                                  # Supply voltage to the pressure sensor
+V_supply = 3.3                                                                      # Supply voltage to the pressure sensor
 
-ADC = Adafruit_ADS1x15.ADS1115()                                                # Initialize ADC
-GAIN = 1                                                                        # Read values in the range of +/-4.096V
+ADC = Adafruit_ADS1x15.ADS1115()                                                    # Initialize ADC
+GAIN = 1                                                                            # Read values in the range of +/-4.096V
 
 # ************************************************************************
 # =========================> MAKE IT ALL HAPPEN <=========================
