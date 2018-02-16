@@ -1,5 +1,7 @@
 '''
 *
+* CUSTOMIZED VERSION FOR DEMO PURPOSES
+*
 * GUI using appJar for Augmented Blood Pressure Cuff
 *
 * VERSION: 0.2.6
@@ -22,7 +24,7 @@ from    bluetoothProtocol_teensy32  import  *		                # import all func
 import  stethoscopeDefinitions      as      definitions                 # Import definiotns [Are we even using those???]
 import  sys, time, bluetooth, serial, argparse                          # 'nuff said
 import  pexpect                                                         # Child process spawning and STDOUT redirection
-import  pressureDialGauge_GUI                                           # Import pressureDialGauge
+#import  pressureDialGauge_GUI                                           # Import pressureDialGauge
 
 
 class GUI(object):
@@ -72,7 +74,7 @@ class GUI(object):
         lgo_name= "main_logo"                                           # Logo name
         
         self.app = gui( "Setup" )                                       # Create GUI variable
-        self.app.setSize( "fullscreen" )                                # Launch in fullscreen
+##        self.app.setSize( "fullscreen" )                                # Launch in fullscreen
         self.app.setBg( "black" )                                       # Set GLOBAL background color
         self.app.setFont( size=20 )                                     # Set GLOBAL font size
 
@@ -92,6 +94,7 @@ class GUI(object):
                                      "CA" ],                            # ...
                                      colspan=2 )                        # Fill entire span
         self.app.setLabelFg( "City\t\t", "gold" )                       # Set the color of 'City'
+        self.app.setOptionBoxState( "City\t\t", "disabled" )
 
         self.app.addLabelOptionBox( "Steth.\t",                         # Create a dropdown menu for stethoscopes
                                    [ "AS001"  ,                         # ...
@@ -101,10 +104,11 @@ class GUI(object):
         self.app.setLabelFg( "Steth.\t", "gold" )                       # Set the color of 'Stethoscope'
 
         self.app.addLabelOptionBox( "Mode  \t",                         # Create a dropdown menu for Modes
-                                   [ "REC",                             # Populate with modes
-                                     "SIM" ],                           # ...
+                                   [ "SIM",                             # Populate with modes
+                                     "REC" ],                           # ...
                                      colspan=2 )                        # Fill entire span
         self.app.setLabelFg( "Mode  \t", "gold" )                       # Set the color of 'Mode'
+        self.app.setOptionBoxState( "Mode  \t", "disabled" )
 
         # Add PD3D logo image
         self.app.addImage( lgo_name, self.logo, colspan=2 )             # Add PD3D Logo
@@ -140,8 +144,14 @@ class GUI(object):
         self.stt = self.stt_addr[self.app.getOptionBox( "Steth.\t" )]   # Get Stethoscope
         self.mde = self.app.getOptionBox( "Mode  \t" )                  # Get Mode
 
+        str_name = { '1' : "subWindow1_string1",
+                     '2' : "subWindow1_string2" }                       # String name
+        message  = { '1' : "Hello world!",
+                     '2' : "Hail to the King" }# Message to print
+
         # Give title & logo names for easier referencing
-        ttl_name = "subWindow1_title"                                   # Title name
+        ttl_name  = { '1' : "subWindow1_title1",
+                      '2' : "subWindow1_title2" }                       # Title name
         lgo_name = "subWindow1_logo"                                    # Logo name
         
         if( prompt == "Submit" ):
@@ -152,25 +162,47 @@ class GUI(object):
             self.app.setBg( "black" )                                   # Set background color
             self.app.setFont( size=20 )                                 # Set font size
             self.app.setPadding( [20, 20] )                             # Pad outside the widgets
-            self.app.setSize( "fullscreen" )                            # Set geometry to fullscreen
+            self.app.setSize( 400, 1000 )
+            self.app.setLocation( 1500, 0 )                             # 1920, 1080
+##            self.app.setSize( "fullscreen" )                            # Set geometry to fullscreen
+            
+             # Write down instructions
+            self.app.addMessage( str_name['1'],                         # Create a message box
+                                 message['1'],                          # Insert message
+                                 colspan = 2 )                          # Define the span
+            self.app.setMessageBg( str_name['1'], "white" )             # Set background
+            self.app.setMessageFg( str_name['1'], "black" )             # Set font color
+            self.app.setMessageRelief( str_name['1'], "ridge" )         # Set relief
+            self.app.setMessageWidth( str_name['1'], "600" )            # Set the allowed width of the box
 
             # Add labels
-            self.app.addLabel( ttl_name, "Enter SP ID" )                # Create a label
-            self.app.setLabelFg( ttl_name, "gold" )                     # Set label's font color
-            self.app.setLabelRelief( ttl_name, "raised" )               # Set relief to raised
+            self.app.addLabel( ttl_name['1'], "Proximity",              # Create a label
+                               colspan = 2 )                            # Fill entire span        
+            self.app.setLabelFg( ttl_name['1'], "gold" )                # Set label's font color
+            self.app.setLabelRelief( ttl_name['1'], "raised" )          # Set relief to raised
 
+            # Write down instructions
+            self.app.addMessage( str_name['2'],                         # Create a message box
+                                 message['2'],                          # Insert message
+                                 colspan = 2 )                          # Define the span
+            self.app.setMessageBg( str_name['2'], "white" )             # Set background
+            self.app.setMessageFg( str_name['2'], "black" )             # Set font color
+            self.app.setMessageRelief( str_name['2'], "ridge" )         # Set relief
+            self.app.setMessageWidth( str_name['2'], "600" )            # Set the allowed width of the box
 
-            # Add boxes
-            self.app.addLabelEntry( "ID\t\t" )                          # Add an ID entry box
-            self.app.setLabelFg( "ID\t\t", "gold" )                     # Set the color of 'Stethoscope'
-
+            # Add labels
+            self.app.addLabel( ttl_name['2'], "Rotation",               # Create a label
+                               colspan = 2 )                            # Fill entire span        
+            self.app.setLabelFg( ttl_name['2'], "gold" )                # Set label's font color
+            self.app.setLabelRelief( ttl_name['2'], "raised" )          # Set relief to raised
+            
             # Add buttons and link them to actions
             row = self.app.getRow()                                     # Get current row we are working on
             self.app.addNamedButton( "Begin", "Begin",                  # Link button to ...
                                      self.inst_win  )                   # ... inst_win() [SubWindow 2]
 
             # Add PD3D logo image
-            self.app.addImage( lgo_name, self.logo )                    # Add PD3D Logo
+##            self.app.addImage( lgo_name, self.logo )                    # Add PD3D Logo
 
             # Start subWindow
             self.app.showSubWindow( self.win_name['1'] )                # Make subWindow visible
@@ -211,7 +243,7 @@ class GUI(object):
             self.app.setBg( "black" )                                   # Set background color
             self.app.setFont( size=20 )                                 # Set font size
             self.app.setPadding( [20, 20] )                             # Pad outside the widgets
-            self.app.setSize( "fullscreen" )                            # Set geometry to fullscreen
+##            self.app.setSize( "fullscreen" )                            # Set geometry to fullscreen
             
             # Add labels
             self.app.addLabel( ttl_name, "Instructions",                # Create a label
