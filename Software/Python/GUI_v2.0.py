@@ -12,7 +12,7 @@
 *
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Nov. 15th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Feb. 05th, 2018 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Feb. 16th, 2018 Year of Our Lord
 *
 '''
 
@@ -144,252 +144,162 @@ class GUI(object):
         self.stt = self.stt_addr[self.app.getOptionBox( "Steth.\t" )]   # Get Stethoscope
         self.mde = self.app.getOptionBox( "Mode  \t" )                  # Get Mode
 
-        str_name = { '1' : "subWindow1_string1",
-                     '2' : "subWindow1_string2" }                       # String name
-        message  = { '1' : "Hello world!",
-                     '2' : "Hail to the King" }# Message to print
+        # Give titles names for easier referencing
+        ttl_name  = { '1' : "subWindow1_title1",                        # ...
+                      '2' : "subWindow1_title2",                        # Title name
+                      '3' : "subWindow1_title3" }                       # ...
 
-        # Give title & logo names for easier referencing
-        ttl_name  = { '1' : "subWindow1_title1",
-                      '2' : "subWindow1_title2" }                       # Title name
-        lgo_name = "subWindow1_logo"                                    # Logo name
+        self. str_name = { '1' : "subWindow1_string1",                  # ...
+                           '2' : "subWindow1_string2",                  # String name
+                           '3' : "subWindow1_string3" }                 # ...
+        
+        message  = { '1' : "Hail to the king  ",                        # ...
+                     '2' : "Hail to the one   ",                        # Message to print
+                     '3' : "Kneel to the crown" }                       # ...
         
         if( prompt == "Submit" ):
 
+            self.app.thread( self.start_bpc )                           # Start ABPC GUI in the background
+            
             # Create a sub window
             self.app.startSubWindow( self.win_name['1'],                # Start subwindow
                                      modal = True )                     # [Modal] disables previous window
             self.app.setBg( "black" )                                   # Set background color
             self.app.setFont( size=20 )                                 # Set font size
             self.app.setPadding( [20, 20] )                             # Pad outside the widgets
-            self.app.setSize( 400, 1000 )
-            self.app.setLocation( 1500, 0 )                             # 1920, 1080
-##            self.app.setSize( "fullscreen" )                            # Set geometry to fullscreen
-            
-             # Write down instructions
-            self.app.addMessage( str_name['1'],                         # Create a message box
+            self.app.setSize( 472, 1048 )                               # 1888, 1048 (width, height)
+            self.app.setLocation( 1416, 0 )                             
+
+            ###
+            # PROXIMITY STUFF
+            ###
+            self.app.addMessage( self.str_name['1'],                    # Create a message box
                                  message['1'],                          # Insert message
                                  colspan = 2 )                          # Define the span
-            self.app.setMessageBg( str_name['1'], "white" )             # Set background
-            self.app.setMessageFg( str_name['1'], "black" )             # Set font color
-            self.app.setMessageRelief( str_name['1'], "ridge" )         # Set relief
-            self.app.setMessageWidth( str_name['1'], "600" )            # Set the allowed width of the box
+            self.app.setMessageBg( self.str_name['1'], "white" )        # Set background
+            self.app.setMessageFg( self.str_name['1'], "black" )        # Set font color
+            self.app.setMessageRelief( self.str_name['1'], "ridge" )    # Set relief
+            self.app.setMessageWidth( self.str_name['1'], "600" )       # Set the allowed width of the box
 
-            # Add labels
             self.app.addLabel( ttl_name['1'], "Proximity",              # Create a label
                                colspan = 2 )                            # Fill entire span        
             self.app.setLabelFg( ttl_name['1'], "gold" )                # Set label's font color
             self.app.setLabelRelief( ttl_name['1'], "raised" )          # Set relief to raised
 
-            # Write down instructions
-            self.app.addMessage( str_name['2'],                         # Create a message box
+            ###
+            # ROTATION STUFF
+            ###
+            self.app.addMessage( self.str_name['2'],                    # Create a message box
                                  message['2'],                          # Insert message
                                  colspan = 2 )                          # Define the span
-            self.app.setMessageBg( str_name['2'], "white" )             # Set background
-            self.app.setMessageFg( str_name['2'], "black" )             # Set font color
-            self.app.setMessageRelief( str_name['2'], "ridge" )         # Set relief
-            self.app.setMessageWidth( str_name['2'], "600" )            # Set the allowed width of the box
+            self.app.setMessageBg( self.str_name['2'], "white" )        # Set background
+            self.app.setMessageFg( self.str_name['2'], "black" )        # Set font color
+            self.app.setMessageRelief( self.str_name['2'], "ridge" )    # Set relief
+            self.app.setMessageWidth( self.str_name['2'], "600" )       # Set the allowed width of the box
 
-            # Add labels
             self.app.addLabel( ttl_name['2'], "Rotation",               # Create a label
                                colspan = 2 )                            # Fill entire span        
             self.app.setLabelFg( ttl_name['2'], "gold" )                # Set label's font color
             self.app.setLabelRelief( ttl_name['2'], "raised" )          # Set relief to raised
+
+            ###
+            # PRESSURE STUFF
+            ###
+            self.app.addMessage( self.str_name['3'],                    # Create a message box
+                                 message['3'],                          # Insert message
+                                 colspan = 2 )                          # Define the span
+            self.app.setMessageBg( self.str_name['3'], "white" )        # Set background
+            self.app.setMessageFg( self.str_name['3'], "black" )        # Set font color
+            self.app.setMessageRelief( self.str_name['3'], "ridge" )    # Set relief
+            self.app.setMessageWidth( self.str_name['3'], "600" )       # Set the allowed width of the box
+
+            self.app.addLabel( ttl_name['3'], "Pressure",               # Create a label
+                               colspan = 2 )                            # Fill entire span        
+            self.app.setLabelFg( ttl_name['3'], "gold" )                # Set label's font color
+            self.app.setLabelRelief( ttl_name['3'], "raised" )          # Set relief to raised
             
             # Add buttons and link them to actions
             row = self.app.getRow()                                     # Get current row we are working on
-            self.app.addNamedButton( "Begin", "Begin",                  # Link button to ...
-                                     self.inst_win  )                   # ... inst_win() [SubWindow 2]
-
-            # Add PD3D logo image
-##            self.app.addImage( lgo_name, self.logo )                    # Add PD3D Logo
+            self.app.addNamedButton( "Exit", "Exit",                    # Link button to ...
+                                     self.app.stop )                    # ... inst_win() [SubWindow 2]
 
             # Start subWindow
             self.app.showSubWindow( self.win_name['1'] )                # Make subWindow visible
 
         else: self.app.stop()                                           # Kill program
-
-# ------------------------------------------------------------------------
-
-    def inst_win( self, prompt ):
-        '''
-        Subwindow (2) - This is where we instruct heart auscultation
-        
-        INPUTS:
-            - prompt: Indicate whether the appropriate button was pressed or not
-
-        OUTPUT:
-            - NON
-        '''
-
-        # Store SP ID
-        self.usr = self.app.getEntry( "ID\t\t" )                        # Get SP ID
-
-        # Give title, logo, and message box names for easier referencing
-        ttl_name = "subWindow2_title"                                   # Title name
-        lgo_name = "subWindow2_logo"                                    # Logo name
-        str_name = "subWindow2_string"                                  # String name
-
-        # Define what message to print on the instructions window
-        message  = "Hello world!"                                       # Message to print
-        
-        self.app.hideSubWindow( self.win_name['1'] )                    # Hide previous SubWindow
-        
-        if( prompt == 'Begin' ):
-
-            # Create a sub window
-            self.app.startSubWindow( self.win_name['2'],                # Start subwindow
-                                     modal=True )         
-            self.app.setBg( "black" )                                   # Set background color
-            self.app.setFont( size=20 )                                 # Set font size
-            self.app.setPadding( [20, 20] )                             # Pad outside the widgets
-##            self.app.setSize( "fullscreen" )                            # Set geometry to fullscreen
-            
-            # Add labels
-            self.app.addLabel( ttl_name, "Instructions",                # Create a label
-                               colspan = 2 )                            # Fill entire span        
-            self.app.setLabelFg( ttl_name, "gold" )                     # Set label's font color
-            self.app.setLabelRelief( ttl_name, "raised" )               # Set relief to raised
-
-            # Add image
-            self.app.addImage( self.win_name['2'],                      # ...
-                               self.image,                              # Add image
-                               colspan = 2)                             # Fill entire span
-            
-            # Write down instructions
-            self.app.addMessage( str_name,                              # Create a message box
-                                 message,                               # Insert message
-                                 colspan = 2 )                          # Define the span
-            self.app.setMessageBg( str_name, "white" )                  # Set background
-            self.app.setMessageFg( str_name, "black" )                  # Set font color
-            self.app.setMessageRelief( str_name, "ridge" )              # Set relief
-            self.app.setMessageWidth( str_name, "600" )                 # Set the allowed width of the box
-            
-            # Add buttons and link them to actions
-            row = self.app.getRow()                                     # Get current row we are working on
-            
-            self.app.addNamedButton( "Start", "Start",                  # Link 'Start' to start_stt()
-                                     self.start_stt, row, 0 )           # Place to the left.
-
-            # Start subWindow
-            self.app.showSubWindow( self.win_name['2'] )                # Make subWindow visible
-            
-        else: self.app.stop()                                           # Kill program
-
-# ------------------------------------------------------------------------
-
-    def start_stt( self, prompt ):
-        '''
-        Start stethoscope for recording.
-        
-        INPUTS:
-            - prompt: Indicate whether the appropriate button was pressed or not
-
-        OUTPUT:
-            - NON
-        '''
-
-        # Define important variables
-        port = 1                                                        # Specify port to connect through
-        snd  = 'H'                                                      # 'H'eartbeat sound
-
-        # Construct destination
-        self.dst = "%s%s%s%s" %( snd,                                   # Sound
-                                 self.usr,                              # SP ID
-                                 self.cty,                              # City
-                                 fullStamp()[2:4] )                     # Time
-
-        # Establish connection
-        self.rfObject = createBTPort( self.stt, port )                  # Connect to device
-        self.status   = statusEnquiry( self.rfObject )                  # Send an enquiry byte
-
-        # Check returned byte
-        if( self.status == True ):
-            if( self.mde == "REC" ):
-                startCustomRecording( self.rfObject, self.dst )         # Start recording
-            else: startBlending( self.rfObject, definitions.ESMSYN )    # Start simulation
-##            else: startBlending( self.rfObject, definitions.EHBREC )    # Start simulation
-
-            startTime = time.time()                                     # Start timer
-
-        else:                                                           # Else ...
-            closeBTPort( self.rfObject )                                # Close connection
-            self.app.stop()                                             # Kill program
-
-        # This is me wasting time
-        while( time.time() - startTime < 10 ):                           # Ensure that user records at least this much time
-##            print( time.time() - startTime )
-            pass
-
-        # Proceed
-        row = self.app.getRow()-1                                       # Get current row and go up one
-        self.app.addNamedButton( "Stop", "Stop",                        # Make 'Stop' visitble and link to start_bpc()
-                                 self.start_bpc, row, 1  )              # Place to the right.
         
 # ------------------------------------------------------------------------
 
-    def start_bpc( self, prompt ):
+    def start_bpc( self ):
         '''
         Start Blood Pressure Cuff.
         
         INPUTS:
-            - prompt: Indicate whether the appropriate button was pressed or not
+            - NON
 
         OUTPUT:
             - NON
         '''
 
-        # Define important variables
-        snd = 'K'                                                       # 'K'orotkoff sound
+        # Print diagnostic information
+        print( "Using Stethoscope %s with address %s"                   # Inform user which ...
+               %(self.app.getOptionBox( "Steth.\t" ), self.stt) )       # ... stethoscope is used
 
-        # Construct destination
-        self.dst = "%s%s%s%s" %( snd,                                   # Sound
-                                 self.usr,                              # SP ID
-                                 self.cty,                              # City
-                                 fullStamp()[2:4] )                     # Time
+        # Establish connection
+        port = 1                                                        # Specify port to connect through
+        self.rfObject = createBTPort( self.stt, port )                  # Connect to device
+        self.status   = statusEnquiry( self.rfObject )                  # Send an enquiry byte
 
-        if( prompt == "Stop" ):
+        if( self.status != 1 ):                                         # ...
+            print( "Device reported back NAK. Troublshoot device" )     # ...
+            print( "Program will now exit." )                           # If the device reports back NAK
+            closeBTPort( self.rfObject )                                # Kill everything
+            sleep( 5.0 )                                                # ...
+            self.app.stop()                                             # ...
 
-            # Disconnect device
-            if( self.mde == "REC" ): stopRecording( self.rfObject )     # Stop recording
-            else: stopBlending( self.rfObject )                         # Stop simulation
+        else:
+            pass
+        
+        # Construct command to pass to shell
+        cmd = "python pressureDialGauge_GUI.py --stethoscope %s --mode %s" %( self.stt, self.mde )
 
-            closeBTPort( self.rfObject )                                # Close connection
+        # Start BloodPressureCuff meter
+        child = pexpect.spawn(cmd, timeout=None)                        # Spawn child
 
-            # Print diagnostic information
-            print( "Using Stethoscope %s with address %s"               # Inform user which ...
-                   %(self.app.getOptionBox( "Steth.\t" ), self.stt) )   # ... stethoscope is used
-            print( "Storing under: %s\n" %self.dst )                    # Inform of destination
+        for line in child:                                              # Read STDOUT ...
+            out = line.strip('\n\r')                                    # ... of spawned child ...
+            print( out )                                                # ... process and print.
 
-            # Construct command to pass to shell
-            cmd = "python pressureDialGauge_GUI.py --directory %s --destination %s --stethoscope %s --mode %s" %( self.cty,
-                                                                                                                  self.dst,
-                                                                                                                  self.stt,
-                                                                                                                  self.mde )
+            out_mmHg = out.split()                                      # Here is where we read pressure
+            if( out_mmHg[0] == "pressure" ):                            # ABPC GUI has "pressure" printed ...
+                mmHg = out_mmHg[1]                                      # ... before the numerical value
 
-            # Start BloodPressureCuff meter
-            child = pexpect.spawn(cmd, timeout=None)                    # Spawn child
+                # We update the value on the message box
+                self.app.queueFunction( self.app.setMessage(self.str_name['3'], mmHg) )
+                '''
+                We could also do many other things here, like
+                check if we are in a specified interval.
+                Or maybe send bytes to the stethoscope.
+                Or God knows what we want to do.
+                Your imagination is the limit (...and computing power)
 
-            for line in child:                                          # Read STDOUT ...
-                out = line.strip('\n\r')                                # ... of spawned child ...
-                print( out )                                            # ... process and print.
+                if( (mmHg >= 75 and mmHg <=100) and ( rot >= 1 and rot <= 2) and ( prox >=0.1 and prox<= 1.0 ) ):
+                    startBlending( self.rfObject, definitions.ESMSYN )
 
-            child.close()                                               # Kill child process
-
-        else: self.app.stop()                                           # Kill program
-
-        # Cleanup and return to previous window
-        self.app.destroySubWindow( self.win_name['2'] )                 # Destroy subWindow (2)
-        self.app.showSubWindow( self.win_name['1'] )                    # Reopen  subWindow (1)
+                else: I would like to have Jennifer Aniston's babies
+                '''
+                
+        child.close()                                                   # Kill child process
+        closeBTPort( self.rfObject )                                    # Close BT connection
         
 # ------------------------------------------------------------------------    
 
 # Define required parameters
-steth_addr = [ "00:06:66:8C:D3:F6",                 # ...
-               "00:06:66:8C:9C:2E",                 # BT Mac address
-               "00:06:66:D0:E4:94" ]                # ...
-logo = "pd3d_inverted_with_title.gif"               # Logo name
-img = "image.gif"                                   # Image name
+steth_addr = [ "00:06:66:8C:D3:F6",                                     # ...
+               "00:06:66:8C:9C:2E",                                     # BT Mac address
+               "00:06:66:D0:E4:94" ]                                    # ...
+logo = "pd3d_inverted_with_title.gif"                                   # Logo name
+img = "image.gif"                                                       # Image name
 
 # START!
 GuI = GUI( logo, img, steth_addr )

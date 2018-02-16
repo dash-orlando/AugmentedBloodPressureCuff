@@ -16,11 +16,16 @@ app=QtGui.QApplication([])
 screen_resolution = app.desktop().screenGeometry()
 width, height = screen_resolution.width(), screen_resolution.height()
 
+available_resolution = app.desktop().availableGeometry()    # Minuse the taskbar
+w_avlbl, h_avlbl = available_resolution.width(), available_resolution.height()
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         #MainWindow.resize(500,500)
-        MainWindow.showFullScreen()
+##        MainWindow.resize( width*3/4, h_avlbl )
+        MainWindow.setGeometry( 0, 0, width*3/4, h_avlbl )
+##        MainWindow.showFullScreen()
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)

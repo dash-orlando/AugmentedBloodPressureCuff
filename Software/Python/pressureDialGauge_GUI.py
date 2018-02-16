@@ -1,5 +1,7 @@
 '''
 *
+* CUSTOMIZED VERSION FOR DEMO PURPOSES
+*
 * Read pressure sensor and display readings on a dial gauge
 *
 * Adapted from: John Harrison's original work
@@ -16,7 +18,7 @@
 * 
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Mar. 07th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Feb. 05th, 2018 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Feb. 16th, 2018 Year of Our Lord
 *
 '''
 
@@ -274,17 +276,21 @@ class Worker( QtCore.QThread ):
 
     def readPressure(self):
 
-        # Compute pressure
-        V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
-        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
-        P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
-        P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
-
+##        # Compute pressure
+##        V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
+##        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
+##        P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
+##        P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
+        P_Pscl = 420
+        P_mmHg = 69
+        
         # Check if we should write to file or not yet
         if( time.time() - self.wFreqTrigger ) >= self.wFreq:
             
             self.wFreqTrigger = time.time()                                         # Reset wFreqTrigger
 
+            print( "pressure %r" %(P_mmHg+time.time()/1000.) )                      # Print to STDOUT
+            
             # Write to file
             dataStream = "%.02f, %.2f, %.2f\n" %( time.time()-self.startTime,       # Format readings
                                                   P_Pscl, P_mmHg )                  # into desired form
@@ -294,7 +300,7 @@ class Worker( QtCore.QThread ):
 
         if( self.owner.mode == "SIM" ): self.sim_mode( P_mmHg )                     # Trigger simulations mode (if --mode SIM)
         else: self.rec_mode()                                                       # Trigger recording   mode (if --mide REC)
-   
+        
         return( P_mmHg )                                                            # Return pressure readings in mmHg
 
 # ------------------------------------------------------------------------
@@ -359,7 +365,7 @@ scenarioNumber = 1                                                              
 
 V_supply = 3.3                                                                      # Supply voltage to the pressure sensor
 
-ADC = Adafruit_ADS1x15.ADS1115()                                                    # Initialize ADC
+##ADC = Adafruit_ADS1x15.ADS1115()                                                    # Initialize ADC
 GAIN = 1                                                                            # Read values in the range of +/-4.096V
 
 # ************************************************************************
