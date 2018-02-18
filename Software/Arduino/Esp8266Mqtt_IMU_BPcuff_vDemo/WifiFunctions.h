@@ -1,7 +1,7 @@
 #include  <ESP8266WiFi.h>
 
-#define   WLAN_SSID "pd3d_alpha"
-#define   WLAN_PASS "pd3d@ist"
+#define   WLAN_SSID "pd3d"
+#define   WLAN_PASS "n3w.pas."
 
 enum        State         { CONNECTED, DISCONNECTED };
 boolean     wifiState;
@@ -27,20 +27,22 @@ boolean WifiSetup()
   WiFi.mode( WIFI_STA );
   WiFi.begin( WLAN_SSID, WLAN_PASS );
   Serial.println( "Connecting to WiFi..." );
-  Serial.println( WiFiErrorCode( WiFi.status() ) );
+  
   while ( ( WiFi.status() != WL_CONNECTED ) && ( !wifiFail ) )
   {
     Serial.print( "." );
     delay( 500 );
-    if ( ++cnt % 20 == 0 ) Serial.println();
-    if ( cnt == 40 )  // 40 for 20 seconds
+    if ( ++cnt % 20 == 0 ) 
+      Serial.println();
+      
+    if ( cnt == 50 )  // 40 for 20 seconds
     {
       int s = WiFi.status();
       Serial.print( "WiFi status = " ); Serial.println( WiFiErrorCode( s ) );
       wifiFail = true;
-//      while ( true ) ;                // loop forever and wait for reset or wdt
     }
-  }
+  };
+  
   if ( wifiFail )
   {
     wifiState = DISCONNECTED;
