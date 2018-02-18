@@ -13,8 +13,8 @@ def on_message( client, userdata, msg ):
     else:
       print( msg.payload )
 
-IP_addr = "10.190.11.172"
-##IP_addr = "192.168.42.1"
+##IP_addr = "10.190.11.172"
+IP_addr = "192.168.42.1"
 port = 1883
 client = mqtt.Client()
 client.connect( IP_addr, port, 60 )
