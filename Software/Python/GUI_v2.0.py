@@ -19,13 +19,12 @@
 # Import the library
 from    appJar                      import  gui                         # Import GUI
 from    timeStamp                   import  fullStamp                   # Show date/time on console output
-from    stethoscopeProtocol         import  *		                # Import all functions from the stethoscope protocol
-from    bluetoothProtocol_teensy32  import  *		                # Import all functions from the bluetooth protocol -teensy3.2
-from    threading                   import  Thread                      # Mulithreading
-import  Queue                       as      qu
+from    stethoscopeProtocol         import  *		                # import all functions from the stethoscope protocol
+from    bluetoothProtocol_teensy32  import  *		                # import all functions from the bluetooth protocol -teensy3.2
 import  stethoscopeDefinitions      as      definitions                 # Import definiotns [Are we even using those???]
-import  sys, time, bluetooth, serial, argparse, pexpect                 # 'nuff said
-#import  pressureDialGauge_GUI                                          # Import pressureDialGauge
+import  sys, time, bluetooth, serial, argparse                          # 'nuff said
+import  pexpect                                                         # Child process spawning and STDOUT redirection
+#import  pressureDialGauge_GUI                                           # Import pressureDialGauge
 
 
 class GUI(object):
@@ -54,7 +53,7 @@ class GUI(object):
         for i in range( len(addr) ):                                    # Loop over addresses 
             handle = "AS%03d" %(i+1)                                    # Construct handle
             self.stt_addr[ handle ] = addr[i]                           # Store into dictionary
-        
+
         # ProceedS
         self.main()                                                     # Launch the main window
 
@@ -160,7 +159,7 @@ class GUI(object):
         
         if( prompt == "Submit" ):
 
-            ##self.app.thread( self.start_bpc )                           # Start ABPC GUI in the background
+            self.app.thread( self.start_bpc )                           # Start ABPC GUI in the background
             
             # Create a sub window
             self.app.startSubWindow( self.win_name['1'],                # Start subwindow
@@ -271,12 +270,12 @@ class GUI(object):
             out = line.strip('\n\r')                                    # ... of spawned child ...
             print( out )                                                # ... process and print.
 
-            out_mmHg = out.split()                                      # Here is where we read pressure
-            if( out_mmHg[0] == "pressure" ):                            # ABPC GUI has "pressure" printed ...
-                mmHg = out_mmHg[1]                                      # ... before the numerical value
+            out_SIM = out.split()                                       # Here is where we read pressure
+            if( out_SIM[0] == "SIM" ):                                  # ABPC GUI has "pressure" printed ...
+                SIM = out_SIM[1]                                        # ... before the numerical value
 
                 # We update the value on the message box
-                self.app.queueFunction( self.app.setMessage(self.str_name['3'], mmHg) )
+                self.app.queueFunction( self.app.setMessage(self.str_name['3'], SIM) )
                 '''
                 We could also do many other things here, like
                 check if we are in a specified interval.

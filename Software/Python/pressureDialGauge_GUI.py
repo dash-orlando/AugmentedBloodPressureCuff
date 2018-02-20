@@ -115,9 +115,17 @@ class MyWindow(QtGui.QMainWindow):
         self.init_rec = True
 
         # List all available BT devices
-        self.ui.pushButtonPair.setEnabled( True )
-        self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
-        self.ui.pushButtonPair.clicked.connect( lambda: self.connectStethoscope() )
+        self.ui.Dial.setEnabled( True )
+        self.ui.pushButtonPair.setEnabled( False )
+        self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
+        
+        # set timeout function for updates
+        self.ctimer = QtCore.QTimer()
+        self.ctimer.start( 10 )
+        QtCore.QObject.connect( self.ctimer, QtCore.SIGNAL( "timeout()" ), self.UpdateDisplay )
+
+        # Create logfile
+        self.setup_log()
 
 # ------------------------------------------------------------------------
 
@@ -193,25 +201,15 @@ class MyWindow(QtGui.QMainWindow):
         Stops recording and closes communication with device
         """
         
-        try:
-            if( self.init_rec == False ):
-                print( fullStamp() + " Stopping Recording" )
-                stopRecording( self.thread.rfObject )                   #
-                QtCore.QThread.sleep( 2 )                               # this delay may be essential
+        print( fullStamp() + " Goodbye!" )
+        QtCore.QThread.sleep( 2 )                               # this delay may be essential
 
-            else:
-                closeBTPort( self.thread.rfObject )
-
-        except:
-            print( fullStamp() + " Device never connected. Closing Dial." )
 
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
 # ************************************************************************
 
 class Worker( QtCore.QThread ):
-
-    deviceBTAddress = 'none'
 
     # Create flags for what mode we are running
     normal = True
@@ -239,27 +237,8 @@ class Worker( QtCore.QThread ):
         """
         This method is called by self.start() in __init__()
         """
-
-        while( self.deviceBTAddress == 'none'):                                     # While no device is selected ...
-            time.sleep( 0.1 )                                                       # Do nothing
-
+        
         try:
-            self.rfObject = createBTPort( self.deviceBTAddress, port )              # Establish communication
-            print( fullStamp() + " Opened " + str(self.deviceBTAddress) )           # Print Diagnostic information
-
-            QtCore.QThread.sleep( 2 )                                               # Delay for stability
-
-            self.status = statusEnquiry( self.rfObject )                            # Send an enquiry byte
-
-            if( self.status == True ):
-                # Update labels
-                self.owner.ui.pushButtonPair.setText( QtGui.QApplication.translate( "MainWindow",
-                                                                                    "Paired",
-                                                                                    None,
-                                                                                    QtGui.QApplication.UnicodeUTF8) )
-                if( self.owner.mode == "REC" ):
-                    startCustomRecording( self.rfObject, self.owner.destination )   # Start recording
-                else: pass
             
             self.startTime = time.time()                                            # Time since the initial reading
             
@@ -276,20 +255,18 @@ class Worker( QtCore.QThread ):
 
     def readPressure(self):
 
-##        # Compute pressure
-##        V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
-##        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
-##        P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
-##        P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
-        P_Pscl = 420
-        P_mmHg = 69
+        # Compute pressure
+        V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
+        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
+        P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
+        P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
         
         # Check if we should write to file or not yet
         if( time.time() - self.wFreqTrigger ) >= self.wFreq:
             
             self.wFreqTrigger = time.time()                                         # Reset wFreqTrigger
 
-            print( "pressure %r" %(P_mmHg+time.time()/1000.) )                      # Print to STDOUT
+            print( "SIM %r" %(self.playback) )                                      # Print to STDOUT
             
             # Write to file
             dataStream = "%.02f, %.2f, %.2f\n" %( time.time()-self.startTime,       # Format readings
@@ -310,38 +287,25 @@ class Worker( QtCore.QThread ):
         In charge of triggering simulations
         """
         
-        # Error handling in case BT communication fails (1)
+        # Error handling (1)
         try:
             # Entering simulation pressure interval
             if (P >= 75) and (P <= 125) and (self.playback == False):
                 self.normal = False                                                 # Turn OFF normal playback
                 self.playback = True                                                # Turn on simulation
 
-                # Send start playback command from a separate thread
-                Thread( target=startBlending,                                       # Send start byte
-                        args=(self.rfObject, definitions.KOROT,) ).start()          #  ...
-
             # Leaving simulation pressure interval
             elif ((P < 75) or (P > 125)) and (self.normal == False):
                 self.normal = True                                                  # Turn ON normal playback
                 self.playback = False                                               # Turn OFF simulation
 
-                # Send stop playback command from a separate thread
-                Thread( target=stopBlending,                                        # Send stop byte
-                        args=(self.rfObject,) ).start()                             # ...
-
-        # Error handling in case BT communication fails (2)        
+        # Error handling (2)        
         except Exception as instance:
             print( "" )                                                             # ...
             print( fullStamp() + " Exception or Error Caught" )                     # ...
             print( fullStamp() + " Error Type " + str(type(instance)) )             # Indicate the error
             print( fullStamp() + " Error Arguments " + str(instance.args) )         # ...
-            print( fullStamp() + " Closing/Reopening Ports..." )                    # ...
 
-            self.rfObject.close()                                                   # Close communications
-            self.rfObject = createBTPort( self.deviceBTAddress, port )              # Reopen communications
-
-            print( fullStamp() + " Successful" )
 # ------------------------------------------------------------------------
 
     def rec_mode( self ):
@@ -365,7 +329,7 @@ scenarioNumber = 1                                                              
 
 V_supply = 3.3                                                                      # Supply voltage to the pressure sensor
 
-##ADC = Adafruit_ADS1x15.ADS1115()                                                    # Initialize ADC
+ADC = Adafruit_ADS1x15.ADS1115()                                                    # Initialize ADC
 GAIN = 1                                                                            # Read values in the range of +/-4.096V
 
 # ************************************************************************
