@@ -100,7 +100,7 @@ class GUI(object):
         
         # Set the parameters for the primary window:
         self.app = gui( "BPCUFF MQTT TEST v0.3.1" )                    # Create GUI variable
-        #self.app.setSize( "fullscreen" )                                # Launch in fullscreen
+        self.app.setSize( "fullscreen" )                                # Launch in fullscreen
         self.app.setBg( "black" )                                       # Set GLOBAL background color
         self.app.setFont( size=20 )                                     # Set GLOBAL font size
 
@@ -121,7 +121,7 @@ class GUI(object):
                                      "CA" ],                            # ...
                                      colspan=2 )                        # Fill entire span ( 2 columns)
         self.app.setLabelFg( cityloc, "gold" )                          # Set the color of 'City'
-        #self.app.setOptionBoxState( cityloc, "disabled" )
+        self.app.setOptionBoxState( cityloc, "disabled" )
 
         # Setup the Stethoscope Selection section: Row 2
         # Add "Options Box"        
@@ -193,55 +193,44 @@ class GUI(object):
                 self.app.startSubWindow( self.subwindow['1'], modal=True )
                 self.app.setBg( "black" )
                 self.app.setPadding( [self.pad/2, self.pad/2] )
-                self.app.setSize( (3*self.resWidth)/8-4*self.pad, self.resHeight-5*self.pad)
-                self.app.setLocation( (5*self.resWidth)/8, -self.pad )
-                self.app.setFont(size=20)
+                self.app.setSize( (1*self.resWidth)/4, self.resHeight)
+                self.app.setLocation( (3*self.resWidth)/4, 0)
+                self.app.setFont(size=24)
                 self.app.setSticky("nesw")
                 self.app.setStretch("both")
                 row = self.app.getRow()
 
-                ## Populating the sub window with labels and widgets:
-                # Setup the title section: Row 0
-                self.app.addImage( logotitle, self.logo, 0, 0, colspan=3)
+               ## Populating the sub window with labels and widgets:
+                 # Setup the Roll section: Row 0
+                self.app.addLabel( logotitle, "CSEC", row, 0, colspan=3)
+                self.app.setLabelBg( logotitle, "black" )
+                self.app.setLabelFg( logotitle, "gold")
+                row = row + 1
+
+                # Setup the Roll section: Row 1
+                self.app.addLabel( connection, "Awaiting MQTT... ", row, 0, colspan=3)
+                self.app.setLabelBg( connection, "red" )
+                self.app.setLabelFg( connection, "black")
                 row = row + 1
                 
-                # Setup the Proximity section: Row 1
-                self.app.setFont(size=24)
-                self.app.addLabel( proxLabel, "Proximity: ", row, 0, colspan=1)
-                self.app.setLabelBg( proxLabel, "gold" )
-                self.app.setLabelFg( proxLabel, "black")
-
-                self.app.addLabel( proxOut, "\t\tNO\t", row, 1, colspan=2 )
+                # Setup the Proximity section: Row 2
+                self.app.addLabel( proxOut, "Proximity", row, 0, colspan=2 )
                 self.app.setLabelBg( proxOut, "red")
                 row = row + 1
 
-                # Setup the Pitch section: Row 2
-                self.app.addLabel( pitchLabel, "Pitch: ", row, 0, colspan=1)
-                self.app.setLabelBg( pitchLabel, "gold" )
-                self.app.setLabelFg( pitchLabel, "black")
-
-                self.app.addLabel( pitchOut, "\t\tNO\t", row, 1, colspan=2 )
+                # Setup the Pitch section: Row 3
+                self.app.addLabel( pitchOut, "Pitch", row, 0, colspan=2 )
                 self.app.setLabelBg( pitchOut, "red")
                 row = row + 1
 
-                # Setup the Roll section: Row 3
-                self.app.addLabel( rLabel, "Roll: ", row, 0, colspan=1)
-                self.app.setLabelBg( rLabel, "gold" )
-                self.app.setLabelFg( rLabel, "black")
-
-                self.app.addLabel( rOut, "\t\tNO\t", row, 1, colspan=2 )
-                self.app.setLabelBg( rOut, "red")
-                row = row + 1
-
                 # Setup the Roll section: Row 4
-                self.app.addLabel( connection, "Awaiting Connection... ", row, 0, colspan=3)
-                self.app.setLabelBg( connection, "red" )
-                self.app.setLabelFg( connection, "black")
+                self.app.addLabel( rOut, "Roll", row, 0, colspan=2 )
+                self.app.setLabelBg( rOut, "red")
                 row = row + 1
 
                 # Setup the Exit Button: Row 5
                 self.app.setSticky("")
-                self.app.addNamedButton( "Quit", quitButton2, self.app.stop, row, 0, colspan=3 )
+                self.app.addNamedButton( "Quit", quitButton2, self.app.stop, row, 0, colspan=2 )
 
                 # Display the sub window!
                 self.app.showSubWindow( self.subwindow['1'] )                      
@@ -344,14 +333,12 @@ class GUI(object):
                         if (self.proximityState == False):
                             # Previous state "NO", a change in state was observed.
                             # Update the proximity label to "OK"
-                            self.app.queueFunction( self.app.setLabel(proxOut, "\tOK\t\t") )
                             self.app.queueFunction( self.app.setLabelBg(proxOut, "green") )
                             self.proximityState = True
                     else:
                         if (self.proximityState == True):
                             # Previous state "OK", a change in state was observed.
                             # Update the proximity label to "NO"
-                            self.app.queueFunction( self.app.setLabel(proxOut, "\t\tNO\t") )
                             self.app.queueFunction( self.app.setLabelBg(proxOut, "red") )
                             self.proximityState = False
 
@@ -360,14 +347,12 @@ class GUI(object):
                         if (self.pitchState == False):
                             # Previous state "NO", a change in state was observed.
                             # Update the pitch label to "OK"
-                            self.app.queueFunction( self.app.setLabel(pitchOut, "\tOK\t\t") )
                             self.app.queueFunction( self.app.setLabelBg(pitchOut, "green") )
                             self.pitchState = True
                     else:
                         if (self.pitchState == True):
                             # Previous state "OK", a change in state was observed.
                             # Update the proximity label to "NO"
-                            self.app.queueFunction( self.app.setLabel(pitchOut, "\t\tNO\t") )
                             self.app.queueFunction( self.app.setLabelBg(pitchOut, "red") )
                             self.pitchState = False
 
@@ -376,14 +361,12 @@ class GUI(object):
                         if (self.rollState == False):
                             # Previous state "NO", a change in state was observed.
                             # Update the roll label to "OK"
-                            self.app.queueFunction( self.app.setLabel(rOut, "\tOK\t\t") )
                             self.app.queueFunction( self.app.setLabelBg(rOut, "green") )
                             self.rollState = True
                     else:
                         if (self.rollState == True):
                             # Previous state "OK", a change in state was observed.
                             # Update the roll label to "NO"
-                            self.app.queueFunction( self.app.setLabel(rOut, "\t\tNO\t") )
                             self.app.queueFunction( self.app.setLabelBg(rOut, "red") )
                             self.rollState = False
                             
@@ -434,7 +417,7 @@ sttaddr = [ "00:06:66:8C:D3:F6",                                     # ...
 
 
 mqtthost = "192.168.42.1"
-mqtttopic = "csec/device/bpcuff"
+mqtttopic = "csec/device/bpcuff1"
 
 # START!
 display = GUI( logo, img, sttaddr, mqtthost, mqtttopic )
