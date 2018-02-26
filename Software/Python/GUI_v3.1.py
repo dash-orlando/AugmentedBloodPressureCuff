@@ -319,7 +319,7 @@ class GUI(object):
                     Hmag = float(mqttOutput[1])
                     pitch = float(mqttOutput[2])
                     roll = float(mqttOutput[3])
-                    #print Hmag, pitch, abs(roll), self.proximityState, self.pressureState, self.playbackState
+                    print Hmag, pitch, abs(roll), self.proximityState, self.pressureState, self.playbackState
 
                     if (initialState == True):
                     # Update MQTT Connection Label, once connected.
@@ -329,7 +329,7 @@ class GUI(object):
 
                     ## Only update the window if and only if there was a state CHANGE:
                     # Proximity Label:
-                    if (Hmag > 3.0):
+                    if (Hmag > 1.5):
                         if (self.proximityState == False):
                             # Previous state "NO", a change in state was observed.
                             # Update the proximity label to "OK"
@@ -343,7 +343,7 @@ class GUI(object):
                             self.proximityState = False
 
                     # Pitch Label:
-                    if ( pitch < -45.0 ):
+                    if ( pitch < 80 and pitch >30 ):
                         if (self.pitchState == False):
                             # Previous state "NO", a change in state was observed.
                             # Update the pitch label to "OK"
@@ -357,7 +357,7 @@ class GUI(object):
                             self.pitchState = False
 
                     # Roll Label:
-                    if ( abs(roll) > 90.0 ):
+                    if ( abs(roll) < 30 ):
                         if (self.rollState == False):
                             # Previous state "NO", a change in state was observed.
                             # Update the roll label to "OK"
@@ -417,7 +417,7 @@ sttaddr = [ "00:06:66:8C:D3:F6",                                     # ...
 
 
 mqtthost = "192.168.42.1"
-mqtttopic = "csec/device/bpcuff1"
+mqtttopic = "csec/device/bpcuff_1"
 
 # START!
 display = GUI( logo, img, sttaddr, mqtthost, mqtttopic )
