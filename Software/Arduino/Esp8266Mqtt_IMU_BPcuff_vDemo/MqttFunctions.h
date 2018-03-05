@@ -6,7 +6,7 @@
 #define MQTT_USERNAME   ""                      // In preparation for securing the MQTT broker.
 #define MQTT_PASSWORD   ""
 #define MQTT_ID         "BPCUFFSENSOR-"         // Identifier to MQTT broker
-#define SENSOR01_PUB	  "csec/device/bpcuff"    // Not accessible within Chatterbox, but through Pi mosquitto-clients
+#define SENSOR01_PUB	  "csec/device/bpcuff_1"  // Not accessible within Chatterbox, but through Pi mosquitto-clients
 
 String                  ID        = "ID - ";
 String                  mqttID( MQTT_ID );

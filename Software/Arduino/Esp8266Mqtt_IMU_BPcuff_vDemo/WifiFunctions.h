@@ -1,7 +1,7 @@
 #include  <ESP8266WiFi.h>
 
-#define   WLAN_SSID "pd3d"
-#define   WLAN_PASS "n3w.pas."
+#define   WLAN_SSID "pd3d_bpcuff"
+#define   WLAN_PASS "pd3d@!st"
 
 enum        State         { CONNECTED, DISCONNECTED };
 boolean     wifiState;
