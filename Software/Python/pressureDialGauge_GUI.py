@@ -57,7 +57,7 @@ ap.add_argument( "--destination", type=str, default="output.txt",
                 help="Set destination" )
 ap.add_argument( "--stethoscope", type=str, default="00:06:66:D0:E4:94",
                 help="Choose stethoscope" )
-ap.add_argument( "-m", "--mode", type=str, default="SIM",
+ap.add_argument( "-m", "--mode", type=str, default="REC",
                 help="Mode to operate under; SIM: Simulation || REC: Recording" )
 
 args = vars( ap.parse_args() )
@@ -266,7 +266,7 @@ class Worker( QtCore.QThread ):
             
             self.wFreqTrigger = time.time()                                         # Reset wFreqTrigger
 
-            print( "SIM %r" %(self.playback) )                                      # Print to STDOUT
+            #print( "SIM %r" %(self.playback) )                                      # Print to STDOUT
             
             # Write to file
             dataStream = "%.02f, %.2f, %.2f\n" %( time.time()-self.startTime,       # Format readings
