@@ -48,10 +48,10 @@ import  stethoscopeDefinitions      as     definitions
 # ************************************************************************
 ap = argparse.ArgumentParser()
 
-ap.add_argument("-f", "--frequency", type=int, default=1,
-                help="set sampling frequency (in secs).\nDefault=1")
-ap.add_argument("-d", "--debug", action='store_true',
-                help="invoke flag to enable debugging")
+ap.add_argument( "-f", "--frequency", type=int, default=1,
+                help="set sampling frequency (in secs).\nDefault=1" )
+ap.add_argument( "-d", "--debug", action='store_true',
+                help="invoke flag to enable debugging" )
 
 args = vars( ap.parse_args() )
 
@@ -59,25 +59,25 @@ args = vars( ap.parse_args() )
 # SETUP PROGRAM
 # ************************************************************************
 
-class MyWindow(QtGui.QMainWindow):
+class MyWindow( QtGui.QMainWindow ):
 
     pressureValue = 0
     lastPressureValue = 0
     
-    def __init__(self, parent=None):
+    def __init__( self, parent=None ):
 
         # Initialize program and extract dial GUI
-        QtGui.QWidget.__init__(self, parent)
+        QtGui.QWidget.__init__( self, parent )
         self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
-        self.thread = Worker(self)
+        self.ui.setupUi( self )
+        self.thread = Worker( self )
 
         # Close rfObject socket on exit
-        self.ui.pushButtonQuit.clicked.connect( lambda: closeBTPort(self.thread.rfObject) )
+        self.ui.pushButtonQuit.clicked.connect( self.cleanUp )
 
         # Setup gauge-needle dimensions
-        self.ui.Dial.setOrigin(90.0)
-        self.ui.Dial.setScaleArc(0.0,340.0)
+        self.ui.Dial.setOrigin( 90.0 )
+        self.ui.Dial.setScaleArc( 0.0, 340.0 )
         self.ui.Dial.update()
         self.ui.Dial.setNeedle( Qwt.QwtDialSimpleNeedle(
                                                         Qwt.QwtDialSimpleNeedle.Arrow,
@@ -90,76 +90,105 @@ class MyWindow(QtGui.QMainWindow):
                                       Qwt.QwtDial.ScaleLabel | Qwt.QwtDial.ScaleBackbone )
 
         # Small ticks are length 5, medium are 15, large are 20
-        self.ui.Dial.setScaleTicks(5, 15, 20)
+        self.ui.Dial.setScaleTicks( 5, 15, 20 )
         
         # Large ticks show every 20, put 10 small ticks between
         # each large tick and every 5 small ticks make a medium tick
-        self.ui.Dial.setScale(10.0,10.0,20.0)
-        self.ui.Dial.setRange(0.0, 300.0)
-        self.ui.Dial.setValue(0)
+        self.ui.Dial.setScale( 10.0, 10.0, 20.0 )
+        self.ui.Dial.setRange( 0.0, 300.0 )
+        self.ui.Dial.setValue( 0 )
 
         # List all available BT devices
         address = deviceBTAddress[0]
-        self.ui.pushButtonPair.setEnabled(True)
-        self.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8))
-        self.ui.pushButtonPair.clicked.connect(lambda: self.connectStethoscope(address))
+        self.ui.pushButtonPair.setEnabled( True )
+        self.ui.pushButtonPair.setText( QtGui.QApplication.translate("MainWindow", "Click to Connect", None, QtGui.QApplication.UnicodeUTF8) )
+        self.ui.pushButtonPair.clicked.connect( lambda: self.connectStethoscope(address) )
 
-    # Connect to stethoscope
-    def connectStethoscope(self, address):
+# ------------------------------------------------------------------------
+
+    def connectStethoscope( self, address ):
+        """
+        Connect to stethoscope.
+        """
+        
         self.thread.deviceBTAddress = str( address )
-        self.ui.Dial.setEnabled(True)
-        self.ui.pushButtonPair.setEnabled(False)
+        self.ui.Dial.setEnabled( True )
+        self.ui.pushButtonPair.setEnabled( False )
 
-        # ************************************************* #
-        #               DATA STORAGE: START                 #
-        # ************************************************* #
-
-        # Create data output folder/file
-        self.dataFileDir = getcwd() + "/dataOutput/" + fullStamp()
-        self.dataFileName = self.dataFileDir + "/output.txt"
-        if(path.exists(self.dataFileDir)) == False:
-            makedirs(self.dataFileDir)
-            print( fullStamp() + " Created data output folder" )
-
-        # Write basic information to the header of the data output file
-        with open(self.dataFileName, "a") as dataFile:
-            dataFile.write( "Date/Time: " + fullStamp() + "\n" )
-            dataFile.write( "Scenario: #" + str(scenarioNumber) + "\n" )
-            dataFile.write( "Device Name: " + deviceName + "\n" )
-            dataFile.write( "Units: seconds, kPa, mmHg" + "\n" )
-            dataFile.close()
-            print( fullStamp() + " Created data output .txt file" )
-            
-        # ************************************************* #
-        #               DATA STORAGE: END                   #
-        # ************************************************* #
+        # Create logfile
+        self.setup_log()
         
         # set timeout function for updates
         self.ctimer = QtCore.QTimer()
-        self.ctimer.start(10)
-        QtCore.QObject.connect(self.ctimer, QtCore.SIGNAL( "timeout()" ), self.UpdateDisplay)
+        self.ctimer.start( 10 )
+        QtCore.QObject.connect( self.ctimer, QtCore.SIGNAL( "timeout()" ), self.UpdateDisplay )
 
-    # Update Dial Gauge display   
-    def UpdateDisplay(self):
-        if self.pressureValue != self.lastPressureValue:
-            self.ui.Dial.setValue(self.pressureValue)
+# ------------------------------------------------------------------------
+
+    def UpdateDisplay( self ):
+        """
+        Update DialGauge display with the most recent pressure readings.
+        """
+        
+        if( self.pressureValue != self.lastPressureValue ):
+            self.ui.Dial.setValue( self.pressureValue )
             self.lastPressureValue = self.pressureValue
 
-    # Scan for available BT devices
-    def scan_rfObject(self):
-        """scan for available BT devices. return a list of tuples (num, name)"""
+# ------------------------------------------------------------------------
+
+    def scan_rfObject( self ):
+        """
+        Scan for available BT devices.
+        Returns a list of tuples (num, name)
+        """
+        
         available = []
         BT_name, BT_address = findSmartDevice( deviceBTAddress[0] )
         if BT_name != 0:
             available.append( (BT_name[0], BT_address[0]) )
             return available
 
+# ------------------------------------------------------------------------
+
+    def setup_log( self ):
+        """
+        Setup directory and create logfile.
+        """
+        
+        # Create data output folder/file
+        self.dataFileDir = getcwd() + "/dataOutput/" + self.directory
+        self.dataFileName = self.dataFileDir + "/" + self.destination
+        if( path.exists(self.dataFileDir) ) == False:
+            makedirs( self.dataFileDir )
+            print( fullStamp() + " Created data output folder" )
+
+        # Write basic information to the header of the data output file
+        with open( self.dataFileName, "w" ) as f:
+            f.write( "Date/Time: " + fullStamp() + "\n" )
+            f.write( "Scenario: #" + str(scenarioNumber) + "\n" )
+            f.write( "Device Name: " + deviceName + "\n" )
+            f.write( "Stethoscope ID: " + self.address + "\n" )
+            f.write( "Units: seconds, kPa, mmHg" + "\n" )
+            f.close()
+            print( fullStamp() + " Created data output .txt file" )
+
+# ------------------------------------------------------------------------
+
+    def cleanUp( self ):
+        """
+        Clean up at program exit.
+        Stops recording and closes communication with device
+        """
+        
+        print( fullStamp() + " Goodbye!" )
+        closeBTPort( self.thread.rfObject )                     # Close port
+        QtCore.QThread.sleep( 2 )                               # this delay may be essential
 
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
 # ************************************************************************
 
-class Worker(QtCore.QThread):
+class Worker( QtCore.QThread ):
 
     deviceBTAddress = 'none'
 
@@ -171,21 +200,24 @@ class Worker(QtCore.QThread):
     wFreq = args["frequency"]
     wFreqTrigger = time.time()
     
-    def __init__(self, parent = None):
-        QtCore.QThread.__init__(self, parent)
+    def __init__( self, parent = None ):
+        QtCore.QThread.__init__( self, parent )
         # self.exiting = False # not sure what this line is for
         print( fullStamp() + " Initializing Worker Thread" )
         self.owner = parent
         self.start()
 
-    def __del__(self):
+# ------------------------------------------------------------------------
+
+    def __del__( self ):
         print( fullStamp() + " Exiting Worker Thread" )
 
-    def run(self):
-        # this method is called by self.start() in __init__()
-        # Do nothing until device is selected from dropdown list
-        while self.deviceBTAddress == 'none':
-            time.sleep(0.1)
+# ------------------------------------------------------------------------
+
+    def run( self ):
+
+        while self.deviceBTAddress == 'none':                       # Do nothing until
+            time.sleep( 0.01 )                                      # a device is paired
 
         # Establish communication after a device is selected
         try:
@@ -193,12 +225,12 @@ class Worker(QtCore.QThread):
             print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
 
             #Delay for stability
-            QtCore.QThread.sleep(2)
+            QtCore.QThread.sleep( 2 )
 
             # Send an enquiry byte
             self.status = statusEnquiry( self.rfObject )
 
-            if self.status == True:
+            if( self.status == True ):
                 # Update labels
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
                 #self.owner.ui.CommandLabel.setText( "Successfully Paired" )
@@ -207,7 +239,7 @@ class Worker(QtCore.QThread):
             # Used to timestamp the readings
             self.startTime = time.time()
             
-            while True:
+            while( True ):
                 self.owner.pressureValue = self.readPressure()
 
         except Exception as instance:
@@ -215,87 +247,92 @@ class Worker(QtCore.QThread):
             print( fullStamp() + " Exception or Error Caught" )
             print( fullStamp() + " Error Type " + str(type(instance)) )
             print( fullStamp() + " Error Arguments " + str(instance.args) )
+
+# ------------------------------------------------------------------------
             
-    def readPressure(self):
+    def readPressure( self ):
 
-        # Perform pressure readings and convert value to mmHg
-        V_analogRead = ADC.read_adc(0, gain=GAIN)
-        V_out = interp(V_analogRead, [1235,19279.4116], [0.16,2.41])
-        pressure = (V_out/V_supply - 0.04)/0.018
-        mmHg = pressure*760/101.3
+        # Compute pressure
+        V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
+        V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
+        P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
+        P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
 
-        # Check if we should write to file or not yet
-        if (time.time() - self.wFreqTrigger) >= self.wFreq:
-            # Reset wFreqTrigger
-            self.wFreqTrigger = time.time()
-
-            # Format string
-            dataStream = ("%.02f, %.2f, %.2f\n" %((time.time()-self.startTime), pressure, mmHg) )
+       # Check if we should write to file or not yet
+        if( time.time() - self.wFreqTrigger ) >= self.wFreq:
+            
+            self.wFreqTrigger = time.time()                                         # Reset wFreqTrigger
 
             # Write to file
-            with open(self.owner.dataFileName, "a") as dataFile:
-                dataFile.write(dataStream)
-                dataFile.close()
+            dataStream = "%.02f, %.2f, %.2f\n" %( time.time()-self.startTime,       # Format readings
+                                                  P_Pscl, P_mmHg )                  # into desired form
 
-        # Error handling in case BT communication fails (1)    
+            with open( self.owner.dataFileName, "a" ) as f:
+                f.write( dataStream )                                               # Write to file
+                f.close()                                                           # Close file
+
+        self.sim_mode( P_mmhg )                                                     # Trigger simulations mode
+        return( P_mmHg )                                                            # Return pressure readings in mmHg
+
+
+# ------------------------------------------------------------------------
+
+    def sim_mode( self, P ):
+        """
+        In charge of triggering simulations
+        """
+        
+        # Error handling (1)
         try:
-            # Start augmenting when entering the specified pressure interval
-            if (mmHg >= 55) and (mmHg <= 105) and (self.playback == False):
-                self.normal = False
-                self.playback = True
+            # Entering simulation pressure interval
+            if (P >= 75) and (P <= 125) and (self.playback == False):
+                self.normal = False                                                 # Turn OFF normal playback
+                self.playback = True                                                # Turn on simulation
 
                 # Send start playback command from a separate thread
                 Thread( target=startBlending, args=(self.rfObject, definitions.KOROT,) ).start()
-
-            # Stop augmenting when leaving the specified pressure interval
-            elif ((mmHg < 55) or (mmHg > 105)) and (self.normal == False):
-                self.normal = True
-                self.playback = False
+                
+            # Leaving simulation pressure interval
+            elif ((P < 75) or (P > 125)) and (self.normal == False):
+                self.normal = True                                                  # Turn ON normal playback
+                self.playback = False                                               # Turn OFF simulation
 
                 # Send stop playback command from a separate thread
                 Thread( target=stopBlending, args=(self.rfObject,) ).start()
                 
-        # Error handling in case BT communication fails (2)        
+        # Error handling (2)        
         except Exception as instance:
-            print( "" )
-            print( fullStamp() + " Exception or Error Caught" )
-            print( fullStamp() + " Error Type " + str(type(instance)) )
-            print( fullStamp() + " Error Arguments " + str(instance.args) )
-            print( fullStamp() + " Closing/Reopening Ports..." )
+            print( "" )                                                             # ...
+            print( fullStamp() + " Exception or Error Caught" )                     # ...
+            print( fullStamp() + " Error Type " + str(type(instance)) )             # Indicate the error
+            print( fullStamp() + " Error Arguments " + str(instance.args) )         # ...
 
-            # Close port then reopen
-            self.rfObject.close()
-            self.rfObject = createBTPort( self.deviceBTAddress, port )
+            print( fullStamp() + " Closing/Reopening Ports..." )                    # ...
+            self.rfObject.close()                                                   # Reset BlueTooth
+            self.rfObject = createBTPort( self.deviceBTAddress, port )              # communications
+            print( fullStamp() + " Successful" )                                    # ...
 
-            print( fullStamp() + " Successful" )
+# ************************************************************************
+# ===========================> SETUP PROGRAM <===========================
+# ************************************************************************
+port = 1                                                                            # Port number to use in communication
+deviceName = "ABPC"                                                                 # Designated device name
+deviceBTAddress = ["00:06:66:D0:E4:94", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"]   # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
+scenarioNumber = 1                                                                  # Device number
 
-        # Return pressure readings in either case
-        finally:
-            return(mmHg)
+V_supply = 3.3                                                                      # Supply voltage to the pressure sensor
+
+ADC = Adafruit_ADS1x15.ADS1115()                                                    # Initialize ADC
+GAIN = 1                                                                            # Read values in the range of +/-4.096V
 
 
 # ************************************************************************
-# ESTABLISH COMMUNICATION
+# =========================> MAKE IT ALL HAPPEN <=========================
 # ************************************************************************
-port = 1
-deviceName = "ABPC"
-deviceBTAddress = ["00:06:66:D0:E4:94", "00:06:66:8C:D3:F6", "00:06:66:86:77:09"] # [ Dev.I (Moe), Dev.II (Moe), Lab Demos ]
-scenarioNumber = 1
-
-# ************************************************************************
-# MAKE IT ALL HAPPEN
-# ************************************************************************
-
-# Define the value of the supply voltage of the pressure sensor
-V_supply = 3.3
-
-# Initialize ADC
-ADC = Adafruit_ADS1x15.ADS1115()
-GAIN = 1    # Reads values in the range of +/-4.096V
 
 if __name__ == "__main__":
     print( fullStamp() + " Booting DialGauge" )
-    app = QtGui.QApplication(sys.argv)
+    app = QtGui.QApplication( sys.argv )
     MyApp = MyWindow()
     MyApp.show()
     sys.exit(app.exec_())
