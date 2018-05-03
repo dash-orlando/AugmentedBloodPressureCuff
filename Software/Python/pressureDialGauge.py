@@ -52,6 +52,8 @@ ap.add_argument( "-f", "--frequency", type=int, default=1,
                 help="set sampling frequency (in secs).\nDefault=1" )
 ap.add_argument( "-d", "--debug", action='store_true',
                 help="invoke flag to enable debugging" )
+ap.add_argument( "--directory", type=str, default='output',
+                help="Set directory" )
 
 args = vars( ap.parse_args() )
 
@@ -156,7 +158,7 @@ class MyWindow( QtGui.QMainWindow ):
         """
         
         # Create data output folder/file
-        self.dataFileDir = getcwd() + "/dataOutput/" + self.directory
+        self.dataFileDir = getcwd() + "/dataOutput/" + args["directory"]
         self.dataFileName = self.dataFileDir + "/" + self.destination
         if( path.exists(self.dataFileDir) ) == False:
             makedirs( self.dataFileDir )
@@ -167,10 +169,10 @@ class MyWindow( QtGui.QMainWindow ):
             f.write( "Date/Time: " + fullStamp() + "\n" )
             f.write( "Scenario: #" + str(scenarioNumber) + "\n" )
             f.write( "Device Name: " + deviceName + "\n" )
-            f.write( "Stethoscope ID: " + self.address + "\n" )
+##            f.write( "Stethoscope ID: " + self.address + "\n" )
             f.write( "Units: seconds, kPa, mmHg" + "\n" )
             f.close()
-            print( fullStamp() + " Created data output .txt file" )
+            print( fullStamp() + " Created data output .txt file\n" )
 
 # ------------------------------------------------------------------------
 
@@ -271,7 +273,7 @@ class Worker( QtCore.QThread ):
                 f.write( dataStream )                                               # Write to file
                 f.close()                                                           # Close file
 
-        self.sim_mode( P_mmhg )                                                     # Trigger simulations mode
+        self.sim_mode( P_mmHg )                                                     # Trigger simulations mode
         return( P_mmHg )                                                            # Return pressure readings in mmHg
 
 
