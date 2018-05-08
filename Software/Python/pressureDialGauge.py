@@ -169,13 +169,14 @@ class MyWindow( QtGui.QMainWindow ):
             print( fullStamp() + " Created data output folder" )                    # ...
 
         with open( self.dataFileName, "w" ) as f:                                   # Write down info as ...
-            f.write( "Date/Time: " + fullStamp() + "\n" )                           # a header on the ...
-            f.write( "Scenario: #" + str(scenarioNumber) + "\n" )                   # output file.
-            f.write( "Device Name: " + deviceName + "\n" )                          # ...
-            f.write( "seconds, kPa, mmHg" + "\n" )                                  # ...
+            f.write( "Date/Time     :  {}\n".format(fullStamp())    )               # a header on the ...
+            f.write( "Scenario      : #{}\n".format(scenarioNumber) )               # output file.
+            f.write( "Device Name   :  {}\n".format(deviceName)     )               # ...
+            f.write( "Stethoscope ID:  {}\n".format(self.address)   )               # ...
+            f.write( "seconds, kPa, mmHg\n" )                                       # ...
             f.close()                                                               # ...
 
-        print( fullStamp() + " Created data output .txt file\n" )
+        print( fullStamp() + " Created data output .txt file\n" )                   # [INFO] Status
 
 # ------------------------------------------------------------------------
 
@@ -210,7 +211,7 @@ class Worker( QtCore.QThread ):
 
         print( fullStamp() + " Initializing Worker Thread" )
 
-        # LobOdeh stuff
+        # LobOdeh and EMA filter stuff
         self.m, self.last_m = 0, 0                                                  # Slopes
         self.b, self.last_b = 0, 0                                                  # y-intercepts
         self.t, self.last_t = 0, 0                                                  # Time step (x-axis)
@@ -241,17 +242,18 @@ class Worker( QtCore.QThread ):
         # Establish communication after a device is selected
         try:
 
+            self.rfObject = createBTPort( self.deviceBTAddress, port )              # Connect to stethoscope
+            print( "{} Opened {}".format(fullStamp(), self.deviceBTAddress) )       # [INFO] Update
+            
             QtCore.QThread.sleep( 2 )                                               # Delay for stability
 
-            self.status = True #statusEnquiry( self.rfObject )                            # Send an enquiry byte
+            self.status = statusEnquiry( self.rfObject )                            # Send an enquiry byte
 
             if( self.status == True ):
                 # Update labels
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
             
-            # Save initial time since script launch
-            # Used to timestamp the readings
-            self.startTime = time.time()
+            self.startTime = time.time()                                            # Store initial time (for timestamp)
             
             while( True ):                                                          # Loop 43va!
                 val = self.readPressure()                                           # Read pressure
@@ -294,8 +296,8 @@ class Worker( QtCore.QThread ):
             self.filterON   = True                                                  # Flag filter to turn ON
             self.at_marker  = True                                                  # Flag that we hit the marker
 
-            if( args["debug"] ):
-                print( "[INFO] Filter ON" )
+            if( args["debug"] ):                                                    # [INFO] Status
+                print( "[INFO] Filter ON" )                                         # ...
 
         # Criteria to turn OFF filter
         elif( P_mmHg <= 40 and self.at_marker and self.filterON ):
@@ -303,10 +305,10 @@ class Worker( QtCore.QThread ):
             self.at_marker  = False                                                 # Reset marker flag                                                   
             self.initialRun = True                                                  # Store initial values at first run
 
-            if( args["debug"] ):
-                print( "[INFO] Filter OFF" )
+            if( args["debug"] ):                                                    # [INFO] Status
+                print( "[INFO] Filter OFF" )                                        # ...
 
-        # If filter is on, apply it to sampled data
+        # If filter is ON, apply it
         if( self.filterON ):
             self.t = time.time() - self.startTime                                   # [DEPRACATED] Used for LobOdeh
             P_mmHg = self.EMA(P_mmHg, ALPHA=0.03)                                   # Apply EMA filter
@@ -324,7 +326,7 @@ class Worker( QtCore.QThread ):
                 f.write( dataStream )                                               # Write to file
                 f.close()                                                           # Close file
 
-##        self.sim_mode( P_mmHg )                                                     # Trigger simulations mode
+        self.sim_mode( P_mmHg )                                                     # Trigger simulations mode
         return( P_mmHg )                                                            # Return pressure readings in mmHg
 
 # ------------------------------------------------------------------------
@@ -405,7 +407,7 @@ class Worker( QtCore.QThread ):
         self.last_b = self.b                                                        # ...
         self.last_t = self.t                                                        # ...
             
-        return( y )
+        return( y )                                                                 # Return filtered data
 
 # ------------------------------------------------------------------------
 
@@ -433,7 +435,7 @@ class Worker( QtCore.QThread ):
         else:
             self.ema        = ALPHA * data_in + (1.0-ALPHA)*self.ema                # Filter
 
-        return( self.ema )
+        return( self.ema )                                                          # Return smoothed data
 
 # ------------------------------------------------------------------------
 
