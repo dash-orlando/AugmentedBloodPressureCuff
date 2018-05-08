@@ -5,21 +5,17 @@
 * Adapted from: John Harrison's original work
 * Link: http://cratel.wichita.edu/cratel/python/code/SimpleVoltMeter
 *
-* VERSION: 0.4.5
-*   - MODIFIED: Switched entire communication protocol from PySerial in favor of PyBluez
-*   - MODIFIED: Modified code to go along with the 2 I2C addresses
-*               fix provided by Danny
-*   - ADDED   : Program now closes BT port on exit
-*   - ADDED   : Change sampling frequency
+* VERSION: 0.5
+*   - MODIFIED: Major code clean up
+*   - ADDED   : EMA filter to remove "real" pulses from the user
+*   - ADDED   : Ability to synthesize fake pulses for the user
 *
 * KNOWN ISSUES:
-*   - Searching for stethoscope puts everything on hold.    (Inherent limitation of PyBluez)
-*   - If no BT device is connected, pushing exit will
-*     throw an error.                                       (Program still closes fine)
+*   - Amplitude of synthesized pulse is dependent on the current readings
 * 
 * AUTHOR                    :   Mohammad Odeh
-* DATE                      :   Mar. 07th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Nov. 11th, 2017 Year of Our Lord
+* DATE                      :   Mar.  7th, 2017 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   May.  8th, 2018 Year of Our Lord
 *
 '''
 
@@ -28,35 +24,42 @@
 # ************************************************************************
 
 # Python modules
-import  sys, time, bluetooth, serial, argparse                  # 'nuff said
-import  Adafruit_ADS1x15                                        # Required library for ADC converter
-from    PyQt4               import QtCore, QtGui, Qt            # PyQt4 libraries required to render display
-from    PyQt4.Qwt5          import Qwt                          # Same here, boo-boo!
-from    numpy               import interp                       # Required for mapping values
-from    threading           import Thread                       # Run functions in "parallel"
-from    os                  import getcwd, path, makedirs       # Pathname manipulation for saving data output
+import  sys, time, bluetooth, serial, argparse                                      # 'nuff said
+import  Adafruit_ADS1x15                                                            # Required library for ADC converter
+import  numpy                           as      np                                  # Required for LobOdeh method
+from    PyQt4                           import  QtCore, QtGui, Qt                   # PyQt4 libraries required to render display
+from    PyQt4.Qwt5                      import  Qwt                                 # Same here, boo-boo!
+from    numpy                           import  interp                              # Required for mapping values
+from    threading                       import  Thread                              # Run functions in "parallel"
+from    os                              import  getcwd, path, makedirs              # Pathname manipulation for saving data output
 
 # PD3D modules
-from    dial                        import Ui_MainWindow        # Imports pre-built dial guage from dial.py
-from    timeStamp                   import fullStamp            # Show date/time on console output
-from    stethoscopeProtocol         import *			# import all functions from the stethoscope protocol
-from    bluetoothProtocol_teensy32  import *			# import all functions from the bluetooth protocol -teensy3.2
-import  stethoscopeDefinitions      as     definitions
+from    dial                            import Ui_MainWindow                        # Imports pre-built dial guage from dial.py
+from    timeStamp                       import fullStamp                            # Show date/time on console output
+from    stethoscopeProtocol             import *			            # Import all functions from the stethoscope protocol
+from    bluetoothProtocol_teensy32      import *			            # Import all functions from the bluetooth protocol -teensy3.2
+import  stethoscopeDefinitions          as     definitions                          # Import stethoscope definitions
 
 # ************************************************************************
 # CONSTRUCT ARGUMENT PARSER 
 # ************************************************************************
 ap = argparse.ArgumentParser()
 
-ap.add_argument( "-f", "--frequency", type=int, default=1,
-                help="set sampling frequency (in secs).\nDefault=1" )
+ap.add_argument( "-s", "--samplingFrequency", type=float, default=1.0,
+                help="Set sampling frequency (in secs).\nDefault=1" )
+
+ap.add_argument( "-b", "--bumpFrequency", type=float, default=0.75,
+                help="Set synthetic bump frequency (in secs).\nDefault=0.75" )
+
 ap.add_argument( "-d", "--debug", action='store_true',
-                help="invoke flag to enable debugging" )
+                help="Invoke flag to enable debugging" )
+
 ap.add_argument( "--directory", type=str, default='output',
                 help="Set directory" )
 
 args = vars( ap.parse_args() )
 
+args["debug"] = True
 # ************************************************************************
 # SETUP PROGRAM
 # ************************************************************************
@@ -122,7 +125,7 @@ class MyWindow( QtGui.QMainWindow ):
         
         # set timeout function for updates
         self.ctimer = QtCore.QTimer()
-        self.ctimer.start( 10 )
+        self.ctimer.start( 1 )
         QtCore.QObject.connect( self.ctimer, QtCore.SIGNAL( "timeout()" ), self.UpdateDisplay )
 
 # ------------------------------------------------------------------------
@@ -133,8 +136,9 @@ class MyWindow( QtGui.QMainWindow ):
         """
         
         if( self.pressureValue != self.lastPressureValue ):
-            self.ui.Dial.setValue( self.pressureValue )
-            self.lastPressureValue = self.pressureValue
+
+            self.ui.Dial.setValue( self.pressureValue )                             # Update dial GUI
+            self.lastPressureValue = self.pressureValue                             # Update variables
 
 # ------------------------------------------------------------------------
 
@@ -146,9 +150,9 @@ class MyWindow( QtGui.QMainWindow ):
         
         available = []
         BT_name, BT_address = findSmartDevice( deviceBTAddress[0] )
-        if BT_name != 0:
+        if( BT_name != 0 ):
             available.append( (BT_name[0], BT_address[0]) )
-            return available
+            return( available )
 
 # ------------------------------------------------------------------------
 
@@ -157,22 +161,21 @@ class MyWindow( QtGui.QMainWindow ):
         Setup directory and create logfile.
         """
         
-        # Create data output folder/file
-        self.dataFileDir = getcwd() + "/dataOutput/" + args["directory"]
-        self.dataFileName = self.dataFileDir + "/" + self.destination
-        if( path.exists(self.dataFileDir) ) == False:
-            makedirs( self.dataFileDir )
-            print( fullStamp() + " Created data output folder" )
+        self.dataFileDir = getcwd() + "/dataOutput/" + args["directory"]            # Define directory
+        self.dataFileName = self.dataFileDir + "/output.txt"                        # Define output file
 
-        # Write basic information to the header of the data output file
-        with open( self.dataFileName, "w" ) as f:
-            f.write( "Date/Time: " + fullStamp() + "\n" )
-            f.write( "Scenario: #" + str(scenarioNumber) + "\n" )
-            f.write( "Device Name: " + deviceName + "\n" )
-##            f.write( "Stethoscope ID: " + self.address + "\n" )
-            f.write( "Units: seconds, kPa, mmHg" + "\n" )
-            f.close()
-            print( fullStamp() + " Created data output .txt file\n" )
+        if( path.exists(self.dataFileDir) == False ):                               # Create directory ... 
+            makedirs( self.dataFileDir )                                            # if it doesn't exist.
+            print( fullStamp() + " Created data output folder" )                    # ...
+
+        with open( self.dataFileName, "w" ) as f:                                   # Write down info as ...
+            f.write( "Date/Time: " + fullStamp() + "\n" )                           # a header on the ...
+            f.write( "Scenario: #" + str(scenarioNumber) + "\n" )                   # output file.
+            f.write( "Device Name: " + deviceName + "\n" )                          # ...
+            f.write( "seconds, kPa, mmHg" + "\n" )                                  # ...
+            f.close()                                                               # ...
+
+        print( fullStamp() + " Created data output .txt file\n" )
 
 # ------------------------------------------------------------------------
 
@@ -183,8 +186,7 @@ class MyWindow( QtGui.QMainWindow ):
         """
         
         print( fullStamp() + " Goodbye!" )
-        closeBTPort( self.thread.rfObject )                     # Close port
-        QtCore.QThread.sleep( 2 )                               # this delay may be essential
+        QtCore.QThread.sleep( 2 )                                                   # this delay may be essential
 
 # ************************************************************************
 # CLASS FOR OPTIONAL INDEPENDENT THREAD
@@ -198,17 +200,32 @@ class Worker( QtCore.QThread ):
     normal = True
     playback = False
     
-    # Define sasmpling frequency (units: sec) controls writing frequency
-    wFreq = args["frequency"]
-    wFreqTrigger = time.time()
+    # Define sampling frequency (units: sec) controls writing frequency
+    wFreq = args["samplingFrequency"]                                               # Frequency at which to write data
+    wFreqTrigger = time.time()                                                      # Trigger counter ^
     
     def __init__( self, parent = None ):
         QtCore.QThread.__init__( self, parent )
-        # self.exiting = False # not sure what this line is for
+##        self.exiting = False                                                        # Not sure what this line is for
+
         print( fullStamp() + " Initializing Worker Thread" )
+
+        # LobOdeh stuff
+        self.m, self.last_m = 0, 0                                                  # Slopes
+        self.b, self.last_b = 0, 0                                                  # y-intercepts
+        self.t, self.last_t = 0, 0                                                  # Time step (x-axis)
+        self.initialRun = True                                                      # Store initial values at first run
+        self.filterON   = False                                                     # Filter boolean
+        self.at_marker  = False                                                     # Marker (EMA trigger points) boolean
+
+        # Synthetic bump frequency
+        self.bumpFreq = args["bumpFrequency"]                                       # Frequency at which to synthesize a pulse
+        self.bumpTrigger = time.time()                                              # Trigger counter ^
+
+        # Start
         self.owner = parent
         self.start()
-
+        
 # ------------------------------------------------------------------------
 
     def __del__( self ):
@@ -218,31 +235,40 @@ class Worker( QtCore.QThread ):
 
     def run( self ):
 
-        while self.deviceBTAddress == 'none':                       # Do nothing until
-            time.sleep( 0.01 )                                      # a device is paired
+        while self.deviceBTAddress == 'none':                                       # Do nothing until
+            time.sleep( 0.01 )                                                      # a device is paired
 
         # Establish communication after a device is selected
         try:
-            self.rfObject = createBTPort( self.deviceBTAddress, port )
-            print( fullStamp() + " Opened " + str(self.deviceBTAddress) )
 
-            #Delay for stability
-            QtCore.QThread.sleep( 2 )
+            QtCore.QThread.sleep( 2 )                                               # Delay for stability
 
-            # Send an enquiry byte
-            self.status = statusEnquiry( self.rfObject )
+            self.status = True #statusEnquiry( self.rfObject )                            # Send an enquiry byte
 
             if( self.status == True ):
                 # Update labels
                 self.owner.ui.pushButtonPair.setText(QtGui.QApplication.translate("MainWindow", "Paired", None, QtGui.QApplication.UnicodeUTF8))
-                #self.owner.ui.CommandLabel.setText( "Successfully Paired" )
             
             # Save initial time since script launch
             # Used to timestamp the readings
             self.startTime = time.time()
             
-            while( True ):
-                self.owner.pressureValue = self.readPressure()
+            while( True ):                                                          # Loop 43va!
+                val = self.readPressure()                                           # Read pressure
+
+                # Synthesize pulse if conditions are met
+                if( 75 <= val and val <= 125 and                                    # Check conditions 
+                    time.time() - self.bumpTrigger >= self.bumpFreq                 # ...
+                    and self.filterON ):                                            # ...
+
+                    if( args["debug"] ):                                            # [INFO] update
+                        print( "\n[INFO] Synthesizing pulse..." )                   # ...
+                    
+                    self.bumpTrigger = time.time()                                  # Reset timer
+                    self.synthesize_pulse( val )                                    # Synthesize pulse
+        
+                else:                                                               # Otherwise don't
+                    self.owner.pressureValue = val                                  # ... 
 
         except Exception as instance:
             print( fullStamp() + " Failed to connect" )
@@ -253,15 +279,40 @@ class Worker( QtCore.QThread ):
 # ------------------------------------------------------------------------
             
     def readPressure( self ):
-
+        """
+        Read pressure transducer and convert voltage into pressure readings
+        """
+        
         # Compute pressure
         V_analog  = ADC.read_adc( 0, gain=GAIN )                                    # Convert analog readings to digital
         V_digital = interp( V_analog, [1235, 19279.4116], [0.16, 2.41] )            # Map the readings
         P_Pscl  = ( V_digital/V_supply - 0.04 )/0.018                               # Convert voltage to SI pressure readings
         P_mmHg = P_Pscl*760/101.3                                                   # Convert SI pressure to mmHg
 
-       # Check if we should write to file or not yet
-        if( time.time() - self.wFreqTrigger ) >= self.wFreq:
+        # Criteria to turn ON  filter
+        if( P_mmHg >= 180 and self.at_marker == False):
+            self.filterON   = True                                                  # Flag filter to turn ON
+            self.at_marker  = True                                                  # Flag that we hit the marker
+
+            if( args["debug"] ):
+                print( "[INFO] Filter ON" )
+
+        # Criteria to turn OFF filter
+        elif( P_mmHg <= 40 and self.at_marker and self.filterON ):
+            self.filterON   = False                                                 # Flag filter to turn OFF
+            self.at_marker  = False                                                 # Reset marker flag                                                   
+            self.initialRun = True                                                  # Store initial values at first run
+
+            if( args["debug"] ):
+                print( "[INFO] Filter OFF" )
+
+        # If filter is on, apply it to sampled data
+        if( self.filterON ):
+            self.t = time.time() - self.startTime                                   # [DEPRACATED] Used for LobOdeh
+            P_mmHg = self.EMA(P_mmHg, ALPHA=0.03)                                   # Apply EMA filter
+        
+        # Check if we should write to file or not yet
+        if( time.time() - self.wFreqTrigger >= self.wFreq ):
             
             self.wFreqTrigger = time.time()                                         # Reset wFreqTrigger
 
@@ -273,9 +324,8 @@ class Worker( QtCore.QThread ):
                 f.write( dataStream )                                               # Write to file
                 f.close()                                                           # Close file
 
-        self.sim_mode( P_mmHg )                                                     # Trigger simulations mode
+##        self.sim_mode( P_mmHg )                                                     # Trigger simulations mode
         return( P_mmHg )                                                            # Return pressure readings in mmHg
-
 
 # ------------------------------------------------------------------------
 
@@ -314,6 +364,104 @@ class Worker( QtCore.QThread ):
             self.rfObject = createBTPort( self.deviceBTAddress, port )              # communications
             print( fullStamp() + " Successful" )                                    # ...
 
+# ------------------------------------------------------------------------
+
+    def lobOdeh( self, y, ytol_min=0.01, ytol_max=2.0 ):
+        """
+        LobOdeh dynamic filter based on slope
+        (used to kill/exterminate/destroy peaks in a signal)
+
+        INPUTS:-
+            - y         : The data to be filterd
+            - ytol_min  : The minimum difference between the desired and actual data point
+            - ytol_max  : The maximum difference between the desired and actual data point
+
+        OUTPUT:-
+            - y         : The filtered data
+        """
+        
+        dy      = y - self.owner.lastPressureValue                                  # Calculate slope
+        dx      = self.t - self.last_t                                              # ...
+        self.m  = dy/dx                                                             # ...
+        
+        self.b  = self.owner.lastPressureValue - self.m * self.t                    # Calculate intercept
+        
+        if( self.initialRun ):
+            self.initialRun = False                                                 # Initial values stored, set to false
+            pass
+        
+        else:
+            y_prime = self.last_m * self.t + self.last_b                            # Calculate predicted value
+            if( ytol_min <= y - y_prime and y - y_prime <= ytol_max ):
+                y       = y_prime - 0.05                                            # Attenuate
+                dy      = y - self.owner.lastPressureValue                          # Calculate slope
+                dx      = self.t - self.last_t                                      # ...
+                self.m  = dy/dx                                                     # ...
+
+                self.b = self.owner.lastPressureValue - self.m*self.t               # Update intercept
+
+        # Update variables
+        self.last_m = self.m                                                        # Update last_* variables
+        self.last_b = self.b                                                        # ...
+        self.last_t = self.t                                                        # ...
+            
+        return( y )
+
+# ------------------------------------------------------------------------
+
+    def EMA( self, data_in, ALPHA=0.03 ):
+        """
+        Exponential Moving Average (EMA) filter
+
+        Inputs:-
+            - data_in   : Data to be smoothed
+            - ALPHA     : Filtering weight
+
+                          High ALPHA: NO SMOOTHING
+                    ( Disregards previous data points )
+                          Low  ALPHA: HELLUVA SMOOTHING
+                ( Complete dependence on previous data points )
+
+        Output:-
+            - self.ema  : Filtered data
+        """
+        
+        if( self.initialRun ):
+            self.ema        = data_in                                               # Store ema_0
+            self.initialRun = False                                                 # Flag initialRun as False
+
+        else:
+            self.ema        = ALPHA * data_in + (1.0-ALPHA)*self.ema                # Filter
+
+        return( self.ema )
+
+# ------------------------------------------------------------------------
+
+    def synthesize_pulse( self, val ):
+        """
+        Synthesize pulse
+
+        INPUTS:-
+            - val : Data point that will be used as a start and
+                    end value for the synthesized pulse
+
+        OUTPUT:-
+            - NONE
+        """
+        
+        # Increment
+        for i in range( 0, 6 ):
+            self.owner.pressureValue = val * ( 1 + i/1000. )
+            if( args["debug"] ):                                                    # [INFO] Status
+                print( "[INFO] Dial @ {}".format(self.owner.pressureValue) )        # ...
+
+        # Decrement
+        for i in range( -5, 1 ):
+            self.owner.pressureValue = val * -1*( -1 + i/1000. )
+            if( args["debug"] ):                                                    # [INFO] Status
+                print( "[INFO] Dial @ {}".format(self.owner.pressureValue) )        # ...
+
+                
 # ************************************************************************
 # ===========================> SETUP PROGRAM <===========================
 # ************************************************************************
