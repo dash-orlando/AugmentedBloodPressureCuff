@@ -30,8 +30,9 @@ from    bluetoothProtocol_teensy32  import  *		                # Import all func
 from    threading                   import  Thread                      # Mulithreading
 import  Queue                       as      qu
 import  stethoscopeDefinitions      as      definitions                 # Import definiotns [Are we even using those???]
-import  sys, time, bluetooth, serial, argparse, pexpect                 # 'nuff said                                        # Import pressureDialGauge
+import  sys, time, bluetooth, serial, argparse, pexpect                 # 'nuff said
 
+from    configurationProtocol       import  *
 
 class GUI(object):
 
@@ -71,6 +72,7 @@ class GUI(object):
 
         # Store stethoscopes in a dictionary
         self.stt_addr = dict()                                          # Create empty dictionary
+        self.handle   = [None]*
         for i in range( len(addr) ):                                    # Loop over addresses 
             handle = "AS%03d" %(i+1)                                    # Construct handle
             self.stt_addr[ handle ] = addr[i]                           # Store into dictionary
@@ -125,12 +127,8 @@ class GUI(object):
 
         # Setup the Stethoscope Selection section: Row 2
         # Add "Options Box"        
-        self.app.addLabelOptionBox( steth,                              # Create a dropdown menu for stethoscopes
-                                   [ "AS001"  ,                         # ...
-                                     "AS002"  ,                         # Populate with stehtoscopes
-                                     "AS003"  ,
-                                     "AS004"  ,
-                                     "AS005" ],                         # ...
+        self.app.addLabelOptionBox( steth,                              # Create a dropdown menu for stethoscope
+                                   [ "AS001" ],                         # ...
                                      colspan=2  )                       # Fill entire span
         self.app.setLabelFg( steth, "gold" )                            # Set the color of 'Stethoscope'
 
@@ -409,11 +407,14 @@ class GUI(object):
 logo = "pd3d_inverted_with_title.gif"                                   # Logo name
 img = "image.gif"                                                       # Image name
 
-sttaddr = [ "00:06:66:8C:D3:F6",                                     # ...
-            "00:06:66:8C:9C:2E",                                     # BT Mac address
-            "00:06:66:D0:E4:94",                                     # ...
-            "00:06:66:D0:C9:A5",                                     # ...
-            "00:06:66:D0:C9:AE" ]                                    # ...
+_, _, _, _, _, _, _, _, dataDir = definePaths()                         # Define directories for ...
+panelID_list = dataDir + "/panels.txt"                                  # ... panel identification
+_, _, panelID, _ = panelSelfID( panelID_list, getMAC("eth0") )          # Identify panel
+
+deviceID_list = ("{}/panel{}devices.txt").format(dataDir, panelID)       # Define directories for device identification
+_, _, bt_address_list = panelDeviceID( deviceID_list, panelID )
+
+sttaddr = [ bt_address_list[0] ]                                        # Get stethoscope address
 
 
 mqtthost = "192.168.42.1"
