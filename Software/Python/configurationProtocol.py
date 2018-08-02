@@ -1,242 +1,198 @@
 """
-configurationProtocol.py
+Stethoscope Configuration Protocol
 
-The following python module contains fuctions specific to the management of configuration files within the control system
+The following module contains functions used to link resources to the main device scripts
 
-Fluvio L Lobo Fenoglietto
-09/01/2016
-
-
-List of functions ::
-
-X - Read configuration (.XML) file
-X - Write configuration (.XML) file
-
+Fluvio L Lobo Fenoglietto 11/15/2017
 """
 
-# Import External Modules
-from os.path import expanduser
-from timeStamp import fullStamp
-import xml.etree.ElementTree as etree
+# ================================================================================= #
+# Import Libraries and/or Modules
+# ================================================================================= #
 
+from    os.path     import expanduser
+import  sys
+from    timeStamp   import fullStamp
+
+# ================================================================================= #
+# Define Path
+#
+# Define single device path
+#
+# Fluvio L Lobo Fenoglietto 11/15/2017
+# ================================================================================= #
+def definePath(device):
+    baseDir = expanduser("~")                                                       # get main/root or base directory for the operating system in use
+    rootDir = "/root"                                                                           # root directory for Linux - Raspbian
+    if baseDir == rootDir:
+        homeDir     = "/home/pi"
+        pythonDir   = homeDir + "/pd3d/csec/repos/ControlSystem/Software/Python"
+        deviceDir   = pythonDir + "/" + device + "/"
+        outputDir   = pythonDir + "/consys/output"
+        dataDir     = pythonDir + "/consys/data"
+    else:
+        homeDir = "/home/pi"
+        pythonDir = homeDir + "/pd3d/csec/repos/ControlSystem/Software/Python"
+        deviceDir = pythonDir + "/" + device + "/"
+        outputDir   = pythonDir + "/consys/output"
+        dataDir     = pythonDir + "/consys/data"
+
+    return homeDir, pythonDir, deviceDir, outputDir, dataDir
+
+# ================================================================================= #
+# Define Paths
+#
+# Define all paths of importance
+#
+# Fluvio L Lobo Fenoglietto 05/25/2018
+# ================================================================================= #
+def definePaths():
+    print( fullStamp() + " definePaths()" )
+    paths       = []
+    paths.append( "/home/pi" )
+    paths.append( paths[0] + "/pd3d/csec/repos/ControlSystem/Software/Python" )
+    paths.append( paths[1] + "/consys/" )
+    paths.append( paths[1] + "/stethoscope/" )
+    paths.append( paths[1] + "/smarthandle/" )
+    paths.append( paths[1] + "/smartholder/" )
+    paths.append( paths[1] + "/bloodpressurecuff/" )
+    paths.append( paths[1] + "/consys/output" )
+    paths.append( paths[1] + "/consys/data" )
+
+    pythonDir   = paths[1]
+    consDir     = paths[2]
+    stetDir     = paths[3]
+    shanDir     = paths[4]
+    sholDir     = paths[5]
+    bpcuDir     = paths[6]
+    outputDir   = paths[7]
+    dataDir     = paths[8]
+
+    return paths, pythonDir, consDir, stetDir, shanDir, sholDir, bpcuDir, outputDir, dataDir
+
+# ================================================================================= #
+# Insert Path
+#
+# Insert defined directory path into the python directory
+#
+# Fluvio L Lobo Fenoglietto 11/15/2017
+# ================================================================================= #
+def addPath(path):
+    if isinstance(path, list):
+        Npaths = len(path)
+        for i in range(0, Npath):
+            sys.path.insert(0, path[i])
+        response = True
+    else:
+        sys.path.insert(0, path)
+        response = False
+    return response
+
+# ================================================================================= #
+# Insert Paths
+#
+# Insert all paths within input array python directory
+#
+# Fluvio L Lobo Fenoglietto 05/25/2018
+# ================================================================================= #
+def addPaths(paths):
+    if isinstance(paths, list):
+        Npaths = len(paths)
+        for i in range(0, Npaths):
+            sys.path.insert(0, paths[i])
+        response = True
+    else:
+        sys.path.insert(0, paths)
+        response = False
+    return response
+
+
+# ================================================================================= #
 # Get MAC address
-#   The following function returns the MAC address of the input interface
-#   Input   ::  {string}    interface   eth0, wlan0
-#   Output  ::  {string}    MAC address
+#
+# Function to retrieve MAC address
+#
+# Fluvio L Lobo Fenoglietto 05/25/2018
+# ================================================================================= #
 def getMAC(interface):
-    print fullStamp() + " getMAC()"
-    print fullStamp() + " Searching MAC address for " + interface + " module"
+    print( fullStamp() + " getMAC()" )
+    print( fullStamp() + " Searching MAC address for " + interface + " module" )
     try:
         address = open("/sys/class/net/" + interface + "/address").read()[:-1]
-        print fullStamp() + " MAC (" + interface + "): " + address
+        print( fullStamp() + " MAC (" + interface + "): " + address )
         return address
     except:
-        print fullStamp() + " Failed to find address, check input interface"
+        print( fullStamp() + " Failed to find address, check input interface" )
 
-# Define Path Variables
-#   The following function defines the path variables for the relevant directories used throughout the control system functions
-#   The program does not handle other operating systems
-def definePaths():
-    print fullStamp() + " definePaths()"
-    homeDir = expanduser("~")                                                                   # Use expand-user to identify the home directory
-    rootDir = "/root"                                                                           # This is the returnof expand-user if the function is executed within a raspbian system
-    if homeDir == rootDir:
-        print fullStamp() + " OS - Raspbian OS"
-        homeDir = "/home/pi"                                                                    # if the two strings are equivalent, then the program must have been executed from a raspbian system. A correction to the home directory has to be made.
-        pythonDir = homeDir + "/pd3d/csec/repos/ControlSystem/Software/Python"                  # Python directory
-        configDir = pythonDir + "/configuration"                                                # Configuration directory
-        configFile = configDir + "/config.xml"                                           # Configuration file
-        dataDir = pythonDir + "/data"                                                           # Data directory
-        outputDir = dataDir + "/output"                                                         # Output directory
-    else:
-        print fullStamp() + " User executed function on an OS that is not supported..."
-        pythonDir = 0
-        configDir = 0
-        configFile = 0
-        dataDir = 0
-        outputDir = 0
-    return pythonDir, configDir, configFile, dataDir, outputDir
-
-# Read Configuration (.XML) File
-#   Reads or imports information from configuration file into an object or structure
-#   Input  :: path to configuration file (string)
-#   Output :: configuration file structure
-def readConfigFile(configFile):
-    print fullStamp() + " readConfigFile()"
-    tree = etree.parse(configFile)
-    root = tree.getroot()
-    return tree, root
-
+# ================================================================================= #
 # Self Identification
-#   This function uses the MAC address of the control system to identify itself within the configuration XML file
-#   Input   ::  {string}        MAC address
-#           ::  {structure}     tree
-#           ::  {structure}     root
-#   Output  ::  {string}        terminal message
-def selfID(address, tree, root):
-    print fullStamp() + " selfID()"
-    Npanels = len(root[1])
-    print fullStamp() + " Found " + str(Npanels) + " instrument panels"
-    for i in range(0,Npanels):
-        mac_bt = root[1][i][0].get("mac_bt")
-        mac_eth = root[1][i][0].get("mac_eth")
-        mac_wlan = root[1][i][0].get("mac_wlan")
-        panelID = root[1][i].get("id")
-        if address == mac_bt:
-            print fullStamp() + " Match on BT MAC address"
-            panelIndex = i
-            print fullStamp() + " Panel id = " + panelID
-            print fullStamp() + " Panel index = " + str(panelIndex)
-            return panelIndex, panelID
-            break
-        elif address == mac_eth:
-            print fullStamp() + " Match on eth MAC address"
-            panelIndex = i
-            print fullStamp() + " Panel id = " + panelID
-            print fullStamp() + " Panel index = " + str(panelIndex)
-            return panelIndex, panelID
-            break
-        elif address == mac_wlan:
-            print fullStamp() + " Match on wlan MAC address"
-            panelIndex = i
-            print fullStamp() + " Panel id = " + panelID
-            print fullStamp() + " Panel index = " + str(panelIndex)
-            return panelIndex, panelID
-            break
-        elif i == Npanels - 1:
-            #print fullStamp() + " Panel " + str(number) + " NOT found"
-            scenarioIndex = -1
-            panelID = "NA"
-            return panelIndex, panelID
+#
+# Function to self-identify the panel using a MAC address
+#
+# Fluvio L Lobo Fenoglietto 05/28/2018
+# ================================================================================= #
+def panelSelfID(id_file_path, device_address):
+    print( fullStamp() + " panelSelfID()" )                                         # signals execution of the function
 
-# Find Scenario Index
-#   The following function finds the configuration file index for the scenario number passed as an input
-def findScenario(number, tree, root):
-    print fullStamp() + " findScenario()"
-    Nscenarios = len(root[2])
-    print fullStamp() + " Found " + str(Nscenarios) + " scenarios"
-    for i in range(0,Nscenarios):
-        scenarioID = root[2][i].get("id")
-        scenarioNumber = int(root[2][i].get("number"))
-        if scenarioNumber == number:
-            print fullStamp() + " Scenario " + str(number) + " found on index " + str(i)
-            print fullStamp() + " Scenario id = " + scenarioID
-            scenarioIndex = i
-            scenarioNumber = number
-            return scenarioIndex, scenarioNumber, scenarioID
-            break
-        elif i == Nscenarios - 1:
-            print fullStamp() + " Scenario " + str(number) + " NOT found"
-            scenarioIndex = -1
-            scenarioNumber = number
-            scenarioID = "NA"
-            return scenarioIndex, scenarioNumber, scenarioID
+    dataFile = open( id_file_path, 'r' )                                            # opens data file with panel information
+    line_num             = 0
+    panel_id_list        = []                                                       # define array variable
+    panel_address_list   = []
+    for line in dataFile:                                                           # for each line in the file ...
+        if len(line) <= 1:                                                          # if nothing in line ... pass
+            pass
+        elif line[0] == "#":                                                        # if line starts with number sign (= comment) ... pass
+            pass
+        else:                                                                       # in any other case ...
+            trim_line = line[:-1]                                                   # trim line by ignoring "end of line" character
+            split_line = trim_line.split(",")                                       # split line with comma delimiter (default)
+            panel_id_list.append( split_line[0] )                                   # append the first element as the number id
+            panel_address_list.append( split_line[1] )                              # append the second element as the MAC address
+            if split_line[1] == device_address:                                     # compare each address to the input panel/device MAC address
+                panel_id        = panel_id_list[line_num]                           # if so ... store id number
+                panel_address   = panel_address_list[line_num]                      # if so ... associate address too ...
+                print( fullStamp() + " Self identified as PANEL" + str(panel_id) )
 
-# Pull Scenario Parameters
-#   The following function pulls scenario parameters from the configuration XML
-#   Input   ::  {int}           scenario index
-#           ::  {structure}     tree
-#           ::  {structure}     root
-#   Output  ::  {array/list}    timers
+            line_num = line_num + 1
 
-def pullParameters(scenarioIndex, tree, root):
-    print fullStamp() + " pullParameters()"
-    parametersIndex = 1
-    timers = []
-    Nparameters = len(root[2][scenarioIndex][parametersIndex])
-    for i in range(0,Nparameters):
-        parameterType = root[2][scenarioIndex][parametersIndex][i].get("type")
-        if parameterType == "timer":
-            timerName = root[2][scenarioIndex][parametersIndex][i].get("name")
-            timerValue = int(root[2][scenarioIndex][parametersIndex][i].text)
-            timers.append(timerValue)
-            print fullStamp() + " Timer found, " + timerName + " = " + str(timerValue)
+    return panel_id_list, panel_address_list, panel_id, panel_address
+    
+# ================================================================================= #
+# Device Identification
+#
+# Function to identify devices associated with the operating panel
+#
+# Fluvio L Lobo Fenoglietto 05/28/2018
+# ================================================================================= #
+def panelDeviceID(id_file_path, panel_id):
+    print( fullStamp() + " panelDeviceID()" )
+
+    dataFile = open( id_file_path, 'r' )
+    
+    line_num                = 0
+    device_id_list          = []
+    device_name_list        = []
+    device_bt_address_list  = []
+    
+    for line in dataFile:                                                           # for each line in the file ...
+        if len(line) <= 1:                                                          # if nothing in line ... pass
+            pass
+        elif line[0] == "#":                                                        # if line starts with number sign (= comment) ... pass
+            pass
         else:
-            print fullStamp() + " Unknown parameter '" + parameterType + "' found"
-    return timers
+            trim_line = line[:-1]                                                   # trim line by ignoring "end of line" character
+            split_line = trim_line.split(",")                                       # split line with comma delimiter (default)
+            device_id_list.append( split_line[0] )
+            device_name_list.append( split_line[1] )
+            device_bt_address_list.append( split_line[2] )
 
-# Pull Scenario Instruments
-#   The following function finds the devices listed under the scenario section of the configuration XML.
-#   Input   ::  {int}           scenario index
-#           ::  {structure}     tree
-#           ::  {structure}     root
-#   Output  ::  {array/list}    scenario devices
+            line_num = line_num + 1
 
-def pullInstruments(panelIndex, scenarioIndex, tree, root):
-    print fullStamp() + " pullInstruments()"
-    devicesIndex = 2
-    scenarioDeviceNames = []
-    Nscenariodevices = len(root[2][scenarioIndex][devicesIndex])
-    for i in range(0, Nscenariodevices):
-        deviceName = root[2][scenarioIndex][devicesIndex][i].get("name")
-        scenarioDeviceNames.append(deviceName)
-        print fullStamp() + " Device found, " + deviceName
-    return scenarioDeviceNames
+    return device_id_list, device_name_list, device_bt_address_list
+            
 
-# Pull Panel Instruments
-#   The following function finds the devices associated with a selected instrument panel
-#   Input   ::  {int}           panel index
-#           ::  {structure}     tree
-#           ::  {structure}     root
-#   Output  ::  {array/list}    panel devices
 
-def pullPanelInstruments(panelIndex, tree, root):
-    print fullStamp() + " pullPanelInstruments()"
-    devicesIndex = 2
-    panelDeviceIDs = []
-    panelDeviceTypes = []
-    panelDeviceNames = []
-    panelDeviceBTAddresses = []
-    panelDevicePortNums = []
-    Npaneldevices = len(root[1][panelIndex])
-    for i in range(0, Npaneldevices):
-        deviceID = root[1][panelIndex][i].get("id")
-        deviceType = root[1][panelIndex][i].get("type")
-        deviceName = root[1][panelIndex][i].get("name")
-        deviceBTAddress = root[1][panelIndex][i].get("mac_bt")
-        devicePortNum = root[1][panelIndex][i].get("port_num")
-        panelDeviceIDs.append(deviceID)
-        panelDeviceTypes.append(deviceType)
-        panelDeviceNames.append(deviceName)
-        panelDeviceBTAddresses.append(deviceBTAddress)
-        panelDevicePortNums.append(devicePortNum)
-        print fullStamp() + " Device found, " + deviceName
-    return panelDeviceIDs, panelDeviceTypes, panelDeviceNames, panelDeviceBTAddresses, panelDevicePortNums
 
-# Instrument Cross Reference
-#   The following function cross-references the scenario devices list with the devices listed under the connected instrument panel and control system.
-#   Finally, the program generates lists with the specific devices to be triggered and their respective hardware addresses
-#   Input   ::  {int}           panel index
-#           ::  {array/list}    scenario devices
-#           ::  {structure}     tree
-#           ::  {structure}     root
-#   Output  ::  {array/list}    device names
-#           ::  {array/list}    device bluetooth addresses#
 
-def instrumentCrossReference(panelIndex, scenarioDeviceNames, tree, root):
-    print fullStamp() + " instrumentCrossReference()"
-    deviceIndex = []
-    deviceTypes = []
-    deviceNames = []
-    deviceAddresses = []
-    Nscenariodevices = len(scenarioDeviceNames)
-    Npaneldevices = len(root[1][panelIndex])
-    for i in range(0,Nscenariodevices):
-        scenarioDeviceName = scenarioDeviceNames[i]
-        for j in range(0,Npaneldevices):
-            panelDeviceType = root[1][panelIndex][j].get("type")
-            panelDeviceName = root[1][panelIndex][j].get("name")
-            panelDeviceAddress = root[1][panelIndex][j].get("mac_bt")
-            if scenarioDeviceName == panelDeviceName:
-                deviceIndex.append(j)
-                deviceTypes.append(panelDeviceType)
-                deviceNames.append(panelDeviceName)
-                deviceAddresses.append(panelDeviceAddress)
-                print fullStamp() + " Matched " + panelDeviceName + ", of type " + panelDeviceType + ", with address " + panelDeviceAddress + ", on index " + str(j)
-    return deviceIndex, deviceTypes, deviceNames, deviceAddresses
-  
-"""
-References
 
-1- XML eTree elementTree - https://docs.python.org/2/library/xml.etree.elementtree.html
-"""
+
