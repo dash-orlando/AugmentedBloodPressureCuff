@@ -280,14 +280,14 @@ class GUI(object):
 ##            print( self.out )                                               # ... process and print.
 
             split_line = self.out.split()                                   # Here is where we read pressure
-            self.region = int( split_line[1] )                              # Get what region we are currently in
             if( split_line[0] == "SIM" ):                                   # ABPC GUI has "SIM" printed ...
+                self.region = int( split_line[1] )                          #   Get what region we are currently in
+                
+                if( self.region > 0 ):                                      #   If we are in a simulation region
+                    self.pressureState = True                               #   Set flag to true
 
-                if( self.region > 0 ):                                      # If we are in a simulation region
-                    self.pressureState = True                               # Set flag to true
-
-                else:                                                       # Else, set it to false
-                    self.pressureState = False                              # ...
+                else:                                                       #   Else, set it to false
+                    self.pressureState = False                              #   ...
                 
         cuff.close()                                                        # Kill child process
         closeBTPort( self.rfObject )                                        # Close BT connection
