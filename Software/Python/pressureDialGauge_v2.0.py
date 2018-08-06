@@ -27,7 +27,7 @@
 * 
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Mar.  7th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Aug.  2nd, 2018 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Aug.  6th, 2018 Year of Our Lord
 *
 '''
 
@@ -52,9 +52,6 @@ paths, pythonDir, consDir, stetDir, shanDir, sholDir, bpcuDir, outputDir, dataDi
 response = addPaths(paths)
 
 from    timeStamp                               import fullStamp
-from    bluetoothProtocol_teensy32              import *
-from    stethoscopeProtocol                     import *
-import  stethoscopeDefinitions                  as     definitions
 
 
 # ========================================================================================= #
@@ -364,9 +361,9 @@ class Worker( QtCore.QThread ):
         
         lp      = float( args["lower_pressure"]  )
         hp      = float( args["higher_pressure"] )
-        quart_1 = float( lp + 0.1*lp )                                              # Region of 10% after lower limit
-        quart_2 = float( lp + 0.5*lp )                                              # Region of 50% after lower limit
-        quart_3 = float( lp + 0.9*lp )                                              # Region of 90% after lower limit
+        quart_1 = float( lp + 0.1*(hp-lp) )                                         # Region of 10% after lower limit
+        quart_2 = float( lp + 0.5*(hp-lp) )                                         # Region of 50% after lower limit
+        quart_3 = float( lp + 0.9*(hp-lp) )                                         # Region of 90% after lower limit
         
         # Error handling (1)
         try:

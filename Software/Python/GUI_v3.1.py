@@ -4,7 +4,8 @@
 *
 * GUI using appJar for Augmented Blood Pressure Cuff
 *
-* VERSION: 3.1
+* VERSION: 3.1.1
+*   - MODIFIED: Use the new stethoscopeDefinitions.
 *   - ADDED   : Tried to understand Dani's code. Brain overload.
 *               Could not compute!
 *   - ADDED   : GUI is now in a class format.
@@ -12,11 +13,11 @@
 *
 *
 * KNOWN ISSUES:
-*   - Extensive testing not performed
+*   - DANI!
 *
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Nov. 15th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Aug.  2nd, 2018 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Aug.  6th, 2018 Year of Our Lord
 *
 * AUTHOR                    :   Edward Nichols
 * DATE                      :   Feb. 18th, 2018 Year of Our Lord
@@ -28,10 +29,10 @@
 from    appJar                      import  gui                             # Import GUI
 from    timeStamp                   import  fullStamp                       # Show date/time on console output
 from    stethoscopeProtocol         import  *		                    # Import all functions from the stethoscope protocol
+from    stethoscopeDefinitions      import  *		                    # Import all functions from the stethoscope definitions
 from    bluetoothProtocol_teensy32  import  *		                    # Import all functions from the bluetooth protocol -teensy3.2
 from    threading                   import  Thread                          # Mulithreading
 import  Queue                       as      qu
-import  stethoscopeDefinitions      as      definitions                     # Import definiotns [Are we even using those???]
 import  sys, time, bluetooth, serial, argparse, pexpect                     # 'nuff said
 
 from    configurationProtocol       import  *
@@ -47,9 +48,10 @@ class GUI(object):
             - img  : Absolute path to the instructional image as a string.
             - addr : A list containing the mac addresses of stethoscopes.
         '''
+        
         # Set MQTT attributes.
-        self.MQTThost = MQTThost
-        self.MQTTtopic = MQTTtopic
+        self.MQTThost   = MQTThost
+        self.MQTTtopic  = MQTTtopic
 
         # Initializing the object attributes to engage the playback of the audio on the stethoscope.
         self.pressureState  = False
@@ -62,9 +64,9 @@ class GUI(object):
 
         # Retrieve the size of the screen: (manually defined for now)
         # self.getScreenSize()
-        self.pad = 5
-        self.resWidth = 1280
-        self.resHeight = 800
+        self.pad        = 5
+        self.resWidth   = 1280
+        self.resHeight  = 800
         
         # Load image attributes.
         self.logo   = logo                                                  # Store logo as an attribute
@@ -76,7 +78,7 @@ class GUI(object):
 
         # Store stethoscopes in a dictionary
         self.stt_addr = dict()                                              # Create empty dictionary
-        self.handle   = [None]*
+##        self.handle   = [None]*len(addr)                                    # Create empty list for handle name
         for i in range( len(addr) ):                                        # Loop over addresses 
             handle = "AS%03d" %(i+1)                                        # Construct handle
             self.stt_addr[ handle ] = addr[i]                               # Store into dictionary
@@ -95,14 +97,14 @@ class GUI(object):
         titleLabel = "title"
         
         cityloc = "City\t\t"
-        steth= "Steth.\t"
+        steth   = "Steth.\t"
     
-        logoLabel = "pd3d_logo"
+        logoLabel   = "pd3d_logo"
         startButton = "Start"
         quitButton1 = "Q1"
         
         ttl_name = "main_title"                                             # Title name
-        lgo_name= "main_logo"                                               # Logo name
+        lgo_name = "main_logo"                                              # Logo name
         
         # Set the parameters for the primary window:
         self.app = gui( "BPCUFF MQTT TEST v0.3.1" )                         # Create GUI variable
@@ -132,9 +134,10 @@ class GUI(object):
         # Setup the Stethoscope Selection section: Row 2
         # Add "Options Box"        
         self.app.addLabelOptionBox( steth,                                  # Create a dropdown menu for stethoscope
-                                   [ "AS001" ],                             # ...
+                                   [ self.stt_addr["AS001"] ],              # ...
                                      colspan=2  )                           # Fill entire span
         self.app.setLabelFg( steth, "gold" )                                # Set the color of 'Stethoscope'
+        self.app.setOptionBoxState( steth, "disabled" )
 
         # Setup the Stethoscope Selection section: Row 3
         # Add "Options Box"   
@@ -171,14 +174,14 @@ class GUI(object):
             self.mde = self.app.getOptionBox( "Mode  \t" )
 
             # Predefined names for the sections/widgets of the subwindow.
-            logotitle = "logoastitle"
-            proxLabel = "prox"
-            proxOut = "proxOut"
-            pitchLabel = "pitch"
-            pitchOut = "pitchOut"
-            rLabel = "roll"
-            rOut = "rOut"
-            connection = "connection"
+            logotitle   = "logoastitle"
+            proxLabel   = "prox"
+            proxOut     = "proxOut"
+            pitchLabel  = "pitch"
+            pitchOut    = "pitchOut"
+            rLabel      = "roll"
+            rOut        = "rOut"
+            connection  = "connection"
             quitButton2 = "Q2"
             
             if (startButton_input == "Start"):
@@ -235,12 +238,12 @@ class GUI(object):
                 self.app.addNamedButton( "Quit", quitButton2, self.app.stop, row, 0, colspan=2 )
 
                 # Display the sub window!
-                self.app.showSubWindow( self.subwindow['1'] )                      
+                self.app.showSubWindow( self.subwindow['1'] )
 
             else:
                 # Kill program and wonder in amazement.
                 self.app.stop()
-                Print("How is this even possible?")                                         
+                Print("How is this even possible?")
         
 # ------------------------------------------------------------------------
 
@@ -255,14 +258,14 @@ class GUI(object):
 
         # Establish connection
         port = 1                                                            # Specify port to connect through
-        self.stethoscope = createBTPort( self.stt, port )                   # Connect to device
-        self.status   = statusEnquiry( self.stethoscope )                   # Send an enquiry byte
+        self.stethoscope= createBTPort( self.stt, port )                    # Connect to device
+        self.status     = statusEnquiry( self.stethoscope )                 # Send an enquiry byte
 
         if( self.status != 1 ):                                             # ...
             print( "Device reported back NAK. Troubleshoot device" )        # ...
             print( "Program will now exit." )                               # If the device reports back NAK
             closeBTPort( self.stethoscope )                                 # Kill everything
-            sleep( 5.0 )                                                    # ...
+            time.sleep( 5.0 )                                               # ...
             self.app.stop()                                                 # ...
 
         else:
@@ -279,7 +282,7 @@ class GUI(object):
             self.out = line.strip('\n\r')                                   # ... of spawned child ...
 ##            print( self.out )                                               # ... process and print.
 
-            split_line = self.out.split()                                   # Here is where we read pressure
+            split_line = self.out.split(',')                                # Here is where we read pressure
             if( split_line[0] == "SIM" ):                                   # ABPC GUI has "SIM" printed ...
                 self.region = int( split_line[1] )                          #   Get what region we are currently in
                 
@@ -290,7 +293,7 @@ class GUI(object):
                     self.pressureState = False                              #   ...
                 
         cuff.close()                                                        # Kill child process
-        closeBTPort( self.rfObject )                                        # Close BT connection
+        closeBTPort( self.stethoscope )                                     # Close BT connection
         
 # ------------------------------------------------------------------------
 
@@ -313,14 +316,14 @@ class GUI(object):
 
                 # Read a line from MQTT output in the terminal.
                 # It is in format: "SENSORID,Hmag,pitch,roll,LOCATIONID" 
-                mqttLine = mqttClient.readline()
-                mqttOutput = mqttLine.split(",")
+                mqttLine    = mqttClient.readline()
+                mqttOutput  = mqttLine.split(",")
 
                 if (mqttOutput[0] == "BPCUFFSENS" ):
-                    Hmag = float(mqttOutput[1])
-                    pitch = float(mqttOutput[2])
-                    roll = float(mqttOutput[3])
-                    print Hmag, pitch, abs(roll), self.proximityState, self.pressureState, self.playbackState
+                    Hmag    = float(mqttOutput[1])
+                    pitch   = float(mqttOutput[2])
+                    roll    = float(mqttOutput[3])
+##                    print Hmag, pitch, abs(roll), self.proximityState, self.pressureState, self.playbackState
 
                     if (initialState == True):
                     # Update MQTT Connection Label, once connected.
@@ -377,37 +380,58 @@ class GUI(object):
         '''
         Loop to check the stethoscope audio playback conditions.
         '''
-        
+
+        blending = bool( False )                                            # Flag to indicate whther device is blending or not!
         time.sleep( 5 )                                                     # Delay to ensure BT connection was established
 
         while( True ):                                                      # Infinite loop
             time.sleep( 0.5 )         
 ##            print( self.proximityState, self.pressureState, self.playbackState )
 
-            if( self.proximityState and self.pressureState ):               # Check conditions
+            if( self.proximityState and self.pressureState ):               # Check conditions (magnet nearby & inside simulation interval)
+                if( self.region != self.region_old ):                       #   If we are in a different region than the previously captured one
 
-                    if( self.region != self.region_old ):                   #   If we are in a different region than the previously captured one
+                    if  ( blending ):                                       #       Needed due to how stethoscope can NOT blend a file ...
+                        stopBlending( self.stethoscope )                    #       ... while it is already blending something else
+                        blending = False                                    #       Set blending flag to False
+                        
+                    if  ( self.region == 0 ):                               #       If we are not within simulation
+                        stopBlending( self.stethoscope )                    #       ... region, don't play anything
+                        blending = False                                    #       Set blending flag to False
 
-                        if  ( self.region == 0 ):                           #       If we are not within simulation
-                            stopBlending( self.stethoscope )                #       ...region, don't play anything
+                    elif( self.region == 1 ):                               #       If we are within the 1st region
+                        blendFileName = 'KOROT4'                            #       ...play this file.
+                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+                                                        blendFiles )        #       ... the array of available bytes.
+                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+                        blending = True                                     #       Set blending flag to True
+                        
+                    elif( self.region == 2 ):                               #       If we are within the 2nd region
+                        blendFileName = 'KOROT3'                            #       ...play this file.
+                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+                                                        blendFiles )        #       ... the array of available bytes.
+                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+                        blending = True                                     #       Set blending flag to True
 
-                        elif( self.region == 1 ):                           #       If we are within the 1st region
-                            fileByte = definitions.NHBSYN                   #       ...play this file
-                            startBlending( self.stethoscope, fileByte)      #       Send the trigger command
+                    elif( self.region == 3 ):                               #       If we are within the 3rd region
+                        blendFileName = 'KOROT2'                            #       ...play this file.
+                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+                                                        blendFiles )        #       ... the array of available bytes.
+                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+                        blending = True                                     #       Set blending flag to True
 
-                        elif( self.region == 2 ):                           #       If we are within the 2nd region
-                            fileByte = definitions.ESMSYN                   #       ...play this file
-                            startBlending( self.stethoscope, fileByte)      #       Send the trigger command
-
-                        elif( self.region == 3 ):                           #       If we are within the 3rd region
-                            fileByte = definitions.EDMSYN                   #       ...play this file
-                            startBlending( self.stethoscope, fileByte)      #       Send the trigger command
-
-                        elif( self.region == 4 ):                           #       If we are within the 4th region
-                            fileByte = definitions.KOROT                    #       ...play this file
-                            startBlending( self.stethoscope, fileByte)      #       Send the trigger command
-                            
-                        self.region_old = self.region                       #   Update flag
+                    elif( self.region == 4 ):                               #       If we are within the 4th region
+                        blendFileName = 'KOROT1'                            #       ...play this file.
+                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+                                                        blendFiles )        #       ... the array of available bytes.
+                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+                        blending = True                                     #       Set blending flag to True
+                        
+                    self.region_old = self.region                           #   Update flag
 
             else: pass
     
@@ -426,8 +450,7 @@ _, _, bt_address_list = panelDeviceID( deviceID_list, panelID )
 
 sttaddr = [ bt_address_list[0] ]                                            # Get stethoscope address
 
-
-mqtthost = "192.168.42.1"
+mqtthost  = "192.168.42.1"
 mqtttopic = "csec/device/bpcuff_1"
 
 # START!
