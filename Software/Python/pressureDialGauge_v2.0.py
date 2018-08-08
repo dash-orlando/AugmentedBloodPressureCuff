@@ -45,7 +45,7 @@ from    threading                               import Thread                   
 from    os                                      import getcwd, path, makedirs               # Pathname manipulation for saving data output
 
 # PD3D modules
-from    dial                                    import Ui_MainWindow
+from    dial_v2                                 import Ui_MainWindow
 from    configurationProtocol                   import *
 
 paths, pythonDir, consDir, stetDir, shanDir, sholDir, bpcuDir, outputDir, dataDir = definePaths()

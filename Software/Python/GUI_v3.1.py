@@ -4,7 +4,10 @@
 *
 * GUI using appJar for Augmented Blood Pressure Cuff
 *
-* VERSION: 3.1.1
+* VERSION: 3.1.2
+* 	- FIXED   : Sending commands to stethoscope now always works.
+* 				( EVERYTHING failed earlier because logic
+*				  statement was missing an equal = sign, lol )
 *   - MODIFIED: Use the new stethoscopeDefinitions.
 *   - ADDED   : Tried to understand Dani's code. Brain overload.
 *               Could not compute!
@@ -17,7 +20,7 @@
 *
 * AUTHOR                    :   Mohammad Odeh
 * DATE                      :   Nov. 15th, 2017 Year of Our Lord
-* LAST CONTRIBUTION DATE    :   Aug.  6th, 2018 Year of Our Lord
+* LAST CONTRIBUTION DATE    :   Aug.  8th, 2018 Year of Our Lord
 *
 * AUTHOR                    :   Edward Nichols
 * DATE                      :   Feb. 18th, 2018 Year of Our Lord
@@ -28,14 +31,14 @@
 # Import the library
 from    appJar                      import  gui                             # Import GUI
 from    timeStamp                   import  fullStamp                       # Show date/time on console output
-from    stethoscopeProtocol         import  *		                    # Import all functions from the stethoscope protocol
-from    stethoscopeDefinitions      import  *		                    # Import all functions from the stethoscope definitions
-from    bluetoothProtocol_teensy32  import  *		                    # Import all functions from the bluetooth protocol -teensy3.2
+from    stethoscopeProtocol         import  *		                    	# Import all functions from the stethoscope protocol
+from    stethoscopeDefinitions      import  *		                    	# Import all functions from the stethoscope definitions
+from    bluetoothProtocol_teensy32  import  *		                    	# Import all functions from the bluetooth protocol -teensy3.2
 from    threading                   import  Thread                          # Mulithreading
 import  Queue                       as      qu
 import  sys, time, bluetooth, serial, argparse, pexpect                     # 'nuff said
 
-from    configurationProtocol       import  *
+from    configurationProtocol       import  * 								# Determine stethoscope address based on device ID (MAC address)
 
 class GUI(object):
 
@@ -134,7 +137,7 @@ class GUI(object):
         # Setup the Stethoscope Selection section: Row 2
         # Add "Options Box"        
         self.app.addLabelOptionBox( steth,                                  # Create a dropdown menu for stethoscope
-                                   [ self.stt_addr["AS001"] ],              # ...
+                                   [ "AS001" ],              				# ...
                                      colspan=2  )                           # Fill entire span
         self.app.setLabelFg( steth, "gold" )                                # Set the color of 'Stethoscope'
         self.app.setOptionBoxState( steth, "disabled" )
@@ -286,7 +289,7 @@ class GUI(object):
             if( split_line[0] == "SIM" ):                                   # ABPC GUI has "SIM" printed ...
                 self.region = int( split_line[1] )                          #   Get what region we are currently in
                 
-                if( self.region > 0 ):                                      #   If we are in a simulation region
+                if( self.region >= 0 ):                                     #   If we are in a simulation region
                     self.pressureState = True                               #   Set flag to true
 
                 else:                                                       #   Else, set it to false
@@ -297,20 +300,20 @@ class GUI(object):
         
 # ------------------------------------------------------------------------
 
-    def MQTTupdate(self, proxOut, pitchOut, rOut, connection):
+    def MQTTupdate( self, proxOut, pitchOut, rOut, connection ):
             # Delay, to let the window come up!
-            time.sleep(3)
+            time.sleep( 3 )
             
             # Beginning the connection.
             initialState = True
 
             ## Using pexpect to interface with bash and linux mosquitto_clients.
-            print("Connecting to MQTT Client...")
-            mqttBash = "mosquitto_sub -h " + self.MQTThost + " -t " + self.MQTTtopic
-            mqttClient = pexpect.spawn(mqttBash, timeout=None)
+            print( "Connecting to MQTT Client..." )
+            mqttBash  	= "mosquitto_sub -h " + self.MQTThost + " -t " + self.MQTTtopic
+            mqttClient 	= pexpect.spawn(mqttBash, timeout=None)
 
             #Loop forever, until program exit.
-            while(True): 
+            while( True ): 
                 # This is the same delay the Arduino program uses to publish to MQTT.
                 # time.sleep(0.5)
 
@@ -319,10 +322,10 @@ class GUI(object):
                 mqttLine    = mqttClient.readline()
                 mqttOutput  = mqttLine.split(",")
 
-                if (mqttOutput[0] == "BPCUFFSENS" ):
-                    Hmag    = float(mqttOutput[1])
-                    pitch   = float(mqttOutput[2])
-                    roll    = float(mqttOutput[3])
+                if ( mqttOutput[0] == "BPCUFFSENS" ):
+                    Hmag    = float( mqttOutput[1] )
+                    pitch   = float( mqttOutput[2] )
+                    roll    = float( mqttOutput[3] )
 ##                    print Hmag, pitch, abs(roll), self.proximityState, self.pressureState, self.playbackState
 
                     if (initialState == True):
@@ -334,13 +337,13 @@ class GUI(object):
                     ## Only update the window if and only if there was a state CHANGE:
                     # Proximity Label:
                     if (Hmag > 1.5):
-                        if (self.proximityState == False):
+                        if ( self.proximityState == False ):
                             # Previous state "NO", a change in state was observed.
                             # Update the proximity label to "OK"
                             self.app.queueFunction( self.app.setLabelBg(proxOut, "green") )
                             self.proximityState = True
                     else:
-                        if (self.proximityState == True):
+                        if ( self.proximityState == True ):
                             # Previous state "OK", a change in state was observed.
                             # Update the proximity label to "NO"
                             self.app.queueFunction( self.app.setLabelBg(proxOut, "red") )
@@ -348,13 +351,13 @@ class GUI(object):
 
                     # Pitch Label:
                     if ( pitch < 80 and pitch >30 ):
-                        if (self.pitchState == False):
+                        if ( self.pitchState == False ):
                             # Previous state "NO", a change in state was observed.
                             # Update the pitch label to "OK"
                             self.app.queueFunction( self.app.setLabelBg(pitchOut, "green") )
                             self.pitchState = True
                     else:
-                        if (self.pitchState == True):
+                        if ( self.pitchState == True ):
                             # Previous state "OK", a change in state was observed.
                             # Update the proximity label to "NO"
                             self.app.queueFunction( self.app.setLabelBg(pitchOut, "red") )
@@ -362,13 +365,13 @@ class GUI(object):
 
                     # Roll Label:
                     if ( abs(roll) < 30 ):
-                        if (self.rollState == False):
+                        if ( self.rollState == False ):
                             # Previous state "NO", a change in state was observed.
                             # Update the roll label to "OK"
                             self.app.queueFunction( self.app.setLabelBg(rOut, "green") )
                             self.rollState = True
                     else:
-                        if (self.rollState == True):
+                        if ( self.rollState == True ):
                             # Previous state "OK", a change in state was observed.
                             # Update the roll label to "NO"
                             self.app.queueFunction( self.app.setLabelBg(rOut, "red") )
@@ -389,49 +392,67 @@ class GUI(object):
 ##            print( self.proximityState, self.pressureState, self.playbackState )
 
             if( self.proximityState and self.pressureState ):               # Check conditions (magnet nearby & inside simulation interval)
-                if( self.region != self.region_old ):                       #   If we are in a different region than the previously captured one
-
-                    if  ( blending ):                                       #       Needed due to how stethoscope can NOT blend a file ...
-                        stopBlending( self.stethoscope )                    #       ... while it is already blending something else
-                        blending = False                                    #       Set blending flag to False
-                        
-                    if  ( self.region == 0 ):                               #       If we are not within simulation
-                        stopBlending( self.stethoscope )                    #       ... region, don't play anything
-                        blending = False                                    #       Set blending flag to False
-
-                    elif( self.region == 1 ):                               #       If we are within the 1st region
-                        blendFileName = 'KOROT4'                            #       ...play this file.
+            	if( self.region > 0 and not blending ): 					# 	If we are in SIM region & NOT blending
+            			blendFileName = 'KOROT5'                            #       ...play this file.
                         matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
                                                         blendFiles )        #       ... the array of available bytes.
                         fileByte = chr( blendInt[matchIndex] )              #       ... 
                         startBlending( self.stethoscope, fileByte )         #       Send the trigger command
                         blending = True                                     #       Set blending flag to True
-                        
-                    elif( self.region == 2 ):                               #       If we are within the 2nd region
-                        blendFileName = 'KOROT3'                            #       ...play this file.
-                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
-                                                        blendFiles )        #       ... the array of available bytes.
-                        fileByte = chr( blendInt[matchIndex] )              #       ... 
-                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
-                        blending = True                                     #       Set blending flag to True
+            	
+            	elif( self.region == 0 and blending ): 						# 	If we are in proximity but leave simulation region
+            		stopBlending( self.stethoscope )                    	#       Stop blending
+                    blending = False                                    	#       Set blending flag to False
 
-                    elif( self.region == 3 ):                               #       If we are within the 3rd region
-                        blendFileName = 'KOROT2'                            #       ...play this file.
-                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
-                                                        blendFiles )        #       ... the array of available bytes.
-                        fileByte = chr( blendInt[matchIndex] )              #       ... 
-                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
-                        blending = True                                     #       Set blending flag to True
+            elif( self.proximityState == False or 							# If magnet is NOT nearby ...
+            	  self.pressureState  == False ): 							# or if we are NOT inside simulation region
+                if( blending ): 											#	If we are blending something
+                	stopBlending( self.stethoscope )                    	#       Stop it because we shouldn't be augmenting
+                    blending = False                                    	#       Set blending flag to False
 
-                    elif( self.region == 4 ):                               #       If we are within the 4th region
-                        blendFileName = 'KOROT1'                            #       ...play this file.
-                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
-                                                        blendFiles )        #       ... the array of available bytes.
-                        fileByte = chr( blendInt[matchIndex] )              #       ... 
-                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
-                        blending = True                                     #       Set blending flag to True
-                        
-                    self.region_old = self.region                           #   Update flag
+##                if( self.region != self.region_old ):                       #   If we are in a different region than the previously captured one
+##
+##                    if  ( blending ):                                       #       Needed due to how stethoscope can NOT blend a file ...
+##                        stopBlending( self.stethoscope )                    #       ... while it is already blending something else
+##                        blending = False                                    #       Set blending flag to False
+##                        
+##                    if  ( self.region == 0 ):                               #       If we are not within simulation
+##                        stopBlending( self.stethoscope )                    #       ... region, don't play anything
+##                        blending = False                                    #       Set blending flag to False
+##
+##                    elif( self.region == 1 ):                               #       If we are within the 1st region
+##                        blendFileName = 'KOROT4'                            #       ...play this file.
+##                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+##                                                        blendFiles )        #       ... the array of available bytes.
+##                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+##                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+##                        blending = True                                     #       Set blending flag to True
+##                        
+##                    elif( self.region == 2 ):                               #       If we are within the 2nd region
+##                        blendFileName = 'KOROT3'                            #       ...play this file.
+##                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+##                                                        blendFiles )        #       ... the array of available bytes.
+##                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+##                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+##                        blending = True                                     #       Set blending flag to True
+##
+##                    elif( self.region == 3 ):                               #       If we are within the 3rd region
+##                        blendFileName = 'KOROT2'                            #       ...play this file.
+##                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+##                                                        blendFiles )        #       ... the array of available bytes.
+##                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+##                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+##                        blending = True                                     #       Set blending flag to True
+##
+##                    elif( self.region == 4 ):                               #       If we are within the 4th region
+##                        blendFileName = 'KOROT1'                            #       ...play this file.
+##                        matchIndex = blendByteMatching( blendFileName,      #       Search for appropriate byte within ...
+##                                                        blendFiles )        #       ... the array of available bytes.
+##                        fileByte = chr( blendInt[matchIndex] )              #       ... 
+##                        startBlending( self.stethoscope, fileByte )         #       Send the trigger command
+##                        blending = True                                     #       Set blending flag to True
+##                        
+##                    self.region_old = self.region                           #   Update flag
 
             else: pass
     

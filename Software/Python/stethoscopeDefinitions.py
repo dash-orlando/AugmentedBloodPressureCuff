@@ -44,7 +44,7 @@ STOPSIM         = chr(0x71)       # simulation byte
 
 ## Blending Audio Files and Reference Bytes ========================================================================================= //
 ### Blending Files
-n_blend_files       = 16
+n_blend_files       = 17
 blendFiles          = (["AORSTE",
                         "S4GALL",
                         "ESMSYN",
@@ -52,6 +52,7 @@ blendFiles          = (["AORSTE",
                         "KOROT2",
                         "KOROT3",
                         "KOROT4",
+                        "KOROT5",
                         "RECAOR",
                         "RECMIT",
                         "RECPUL",
